@@ -1,0 +1,100 @@
+import streamlit as st
+import polars as pl
+import numpy as np
+from sklearn.manifold import TSNE
+import plotly.express as px
+from stmol import showmol
+import py3Dmol
+
+st.set_page_config(layout="wide", page_title="OpenTargetGraph")
+
+st.title("🧬 OpenTargetGraph: AI-Driven Target Discovery")
+st.markdown("""
+This dashboard visualizes **Kinase targets** and their structural similarity using **ESM-2 Embeddings**.
+""")
+
+# --- Load Data ---
+@st.cache_data
+def load_data():
+    # Load metadata and embeddings
+    df_meta = pl.read_parquet("data/kinases.parquet")
+    df_emb = pl.read_parquet("data/embeddings.parquet")
+    
+    # Join them on ID
+    df = df_meta.join(df_emb, on="uniprot_id")
+    return df
+
+try:
+    df = load_data()
+    st.success(f"Loaded {len(df)} targets with embeddings.")
+except Exception as e:
+    st.error("Data not found! Did you run the Dagster pipeline? (Check 'data/' folder)")
+    st.stop()
+
+# --- Layout ---
+col1, col2 = st.columns([1, 2])
+
+with col1:
+    st.subheader("1. Select a Target")
+    selected_id = st.selectbox(
+        "Choose a protein:", 
+        df["uniprot_id"].to_list(),
+        format_func=lambda x: f"{x} - {df.filter(pl.col('uniprot_id') == x)['protein_name'][0]}"
+    )
+    
+    # Get details
+    target_row = df.filter(pl.col("uniprot_id") == selected_id)
+    seq = target_row["sequence"][0]
+    
+    st.text_area("Sequence", seq, height=100)
+    
+    st.subheader("3D Structure Preview")
+    # We use AlphaFoldDB to get the structure (predicted) for this ID
+    # Note: ESMFold is another option, but AlphaFoldDB is easiest for a demo
+    xyzview = py3Dmol.view(query=f'pdb:{selected_id}')
+    xyzview.setStyle({'cartoon':{'color':'spectrum'}})
+    showmol(xyzview, height=300, width=400)
+
+with col2:
+    st.subheader("2. Embedding Space (t-SNE)")
+    st.markdown("Visualizing sequence similarity based on ESM-2 vectors.")
+    
+    # Run t-SNE (Dimensionality Reduction)
+    # In a real app, pre-calculate this!
+    if st.button("Generate Plot (Compute Heavy)"):
+        with st.spinner("Projecting 320-dim vectors to 2D..."):
+            # Extract embeddings matrix
+            matrix = np.array(df["embedding"].to_list())
+            
+            # Reduce to 2D
+            tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(df)-1))
+            projections = tsne.fit_transform(matrix)
+            
+            # Add to dataframe for plotting
+            plot_df = df.with_columns([
+                pl.Series("x", projections[:, 0]),
+                pl.Series("y", projections[:, 1])
+            ])
+            
+            # Plot
+            fig = px.scatter(
+                plot_df.to_pandas(), 
+                x="x", y="y", 
+                hover_data=["uniprot_id", "protein_name", "gene_name"],
+                color="length", # Color by protein length as a proxy for complexity
+                title="Protein Similarity Map"
+            )
+            
+            # Highlight selected point
+            selected_point = plot_df.filter(pl.col("uniprot_id") == selected_id)
+            fig.add_scatter(
+                x=selected_point["x"], 
+                y=selected_point["y"], 
+                mode='markers', 
+                marker=dict(size=15, color='red', symbol='x'),
+                name='Selected'
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Click the button to run t-SNE projection.")

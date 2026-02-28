@@ -15,9 +15,11 @@ dependencies = [
     "transformers",
     "streamlit",
     "stmol",
-    "py3dmol",
+    "py3Dmol",
     "scikit-learn",
-    "plotly"
+    "plotly",
+    "ipython_genutils",
+    "nbformat"
 ]
 
 [project.optional-dependencies]
