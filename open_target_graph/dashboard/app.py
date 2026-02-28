@@ -24,7 +24,7 @@ def render_header() -> None:
     This dashboard visualizes **Kinase targets** and their structural similarity using **ESM-2 Embeddings**. 
     Instead of traditional sequence alignment, we use a **Protein Language Model** to capture deep semantic relationships between proteins.
 
-    #### 🤖 Model: ESM-2
+    #### 🤖 Model: [ESM-2](https://huggingface.co/facebook/esm2_t6_8M_UR50D)
     **ESM-2** is a transformer-based model trained on millions of protein sequences. It converts a protein sequence into an embedding that encodes structural and functional properties.
     """)
 
