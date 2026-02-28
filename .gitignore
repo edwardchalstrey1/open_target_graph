@@ -52,3 +52,6 @@ models/
 .vscode/
 .idea/
 .ipynb_checkpoints/
+
+# --- Misc ---
+prompts/todos.md
