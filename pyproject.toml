@@ -10,9 +10,14 @@ dependencies = [
     "dagster-cloud",
     "polars",
     "requests",
-    "pyarrow",  # Required for Polars to write Parquet
-    "torch",    # For the ML layer (we'll add this later, but good to have now)
-    "transformers" # For HuggingFace models
+    "pyarrow",
+    "torch",
+    "transformers",
+    "streamlit",
+    "stmol",
+    "py3dmol",
+    "scikit-learn",
+    "plotly"
 ]
 
 [project.optional-dependencies]
