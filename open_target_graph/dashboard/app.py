@@ -11,7 +11,11 @@ st.set_page_config(layout="wide", page_title="OpenTargetGraph")
 
 st.title("🧬 OpenTargetGraph: AI-Driven Target Discovery")
 st.markdown("""
-This dashboard visualizes **Kinase targets** and their structural similarity using **ESM-2 Embeddings**.
+This dashboard visualizes **Kinase targets** and their structural similarity using **ESM-2 Embeddings**. 
+Instead of traditional sequence alignment, we use a **Protein Language Model** to capture deep semantic relationships between proteins.
+
+#### 🤖 Model: ESM-2
+**ESM-2** is a transformer-based model trained on millions of protein sequences. It converts a protein sequence into an embedding that encodes structural and functional properties.
 """)
 
 # --- Load Data ---
@@ -70,7 +74,12 @@ with col1:
 
 with col2:
     st.subheader("2. Embedding Space (t-SNE)")
-    st.markdown("Visualizing sequence similarity based on ESM-2 vectors.")
+    st.markdown("""
+    **What is this plot?**
+    We use **t-SNE** (t-Distributed Stochastic Neighbor Embedding) to project the 320-dimensional ESM-2 vectors down to 2D.
+    * **Points**: Each dot is a Kinase protein.
+    * **Proximity**: Points closer together are "semantically" similar in the eyes of the AI model.
+    """)
     
     # Run t-SNE (Dimensionality Reduction)
     # Note: In a real app, may be faster to pre-compute this and store it.
@@ -93,9 +102,10 @@ with col2:
             fig = px.scatter(
                 plot_df.to_pandas(), 
                 x="x", y="y", 
+                labels={'x': 't-SNE Dimension 1', 'y': 't-SNE Dimension 2'},
                 hover_data=["uniprot_id", "protein_name", "gene_name"],
                 color="length", # Color by protein length as a proxy for complexity
-                title="Protein Similarity Map"
+                title="Protein Similarity Map (ESM-2 Latent Space)"
             )
             
             # Highlight selected point
