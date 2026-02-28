@@ -37,7 +37,7 @@ except Exception as e:
     st.stop()
 
 # --- Layout ---
-col1, col2 = st.columns([1, 2])
+col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("1. Select a Target")
@@ -53,6 +53,7 @@ with col1:
     
     st.text_area("Sequence", seq, height=100)
     
+with col2:
     st.subheader("3D Structure Preview")
     # We use AlphaFoldDB to get the structure (predicted) for this ID
     # Note: ESMFold is another option, but AlphaFoldDB is easiest for a demo
@@ -72,52 +73,52 @@ with col1:
 
     showmol(xyzview, height=300, width=400)
 
-with col2:
-    st.subheader("2. Embedding Space (t-SNE)")
-    st.markdown("""
-    **What is this plot?**
-    We use **t-SNE** (t-Distributed Stochastic Neighbor Embedding) to project the 320-dimensional ESM-2 vectors down to 2D.
-    * **Points**: Each dot is a Kinase protein.
-    * **Proximity**: Points closer together are "semantically" similar in the eyes of the AI model.
-    """)
-    
-    # Run t-SNE (Dimensionality Reduction)
-    # Note: In a real app, may be faster to pre-compute this and store it.
-    if st.button("Generate Plot"):
-        with st.spinner("Projecting 320-dim vectors to 2D..."):
-            # Extract embeddings matrix
-            matrix = np.array(df["embedding"].to_list())
-            
-            # Reduce to 2D
-            tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(df)-1))
-            projections = tsne.fit_transform(matrix)
-            
-            # Add to dataframe for plotting
-            plot_df = df.with_columns([
-                pl.Series("x", projections[:, 0]),
-                pl.Series("y", projections[:, 1])
-            ])
-            
-            # Plot
-            fig = px.scatter(
-                plot_df.to_pandas(), 
-                x="x", y="y", 
-                labels={'x': 't-SNE Dimension 1', 'y': 't-SNE Dimension 2'},
-                hover_data=["uniprot_id", "protein_name", "gene_name"],
-                color="length", # Color by protein length as a proxy for complexity
-                title="Protein Similarity Map (ESM-2 Latent Space)"
-            )
-            
-            # Highlight selected point
-            selected_point = plot_df.filter(pl.col("uniprot_id") == selected_id)
-            fig.add_scatter(
-                x=selected_point["x"], 
-                y=selected_point["y"], 
-                mode='markers', 
-                marker=dict(size=15, color='red', symbol='x'),
-                name='Selected'
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("Click the button to run t-SNE projection.")
+st.divider()
+st.subheader("2. Embedding Space (t-SNE)")
+st.markdown("""
+**What is this plot?**
+We use **t-SNE** (t-Distributed Stochastic Neighbor Embedding) to project the 320-dimensional ESM-2 vectors down to 2D.
+* **Points**: Each dot is a Kinase protein.
+* **Proximity**: Points closer together are "semantically" similar in the eyes of the AI model.
+""")
+
+# Run t-SNE (Dimensionality Reduction)
+# Note: In a real app, may be faster to pre-compute this and store it.
+if st.button("Generate Plot"):
+    with st.spinner("Projecting 320-dim vectors to 2D..."):
+        # Extract embeddings matrix
+        matrix = np.array(df["embedding"].to_list())
+        
+        # Reduce to 2D
+        tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(df)-1))
+        projections = tsne.fit_transform(matrix)
+        
+        # Add to dataframe for plotting
+        plot_df = df.with_columns([
+            pl.Series("x", projections[:, 0]),
+            pl.Series("y", projections[:, 1])
+        ])
+        
+        # Plot
+        fig = px.scatter(
+            plot_df.to_pandas(), 
+            x="x", y="y", 
+            labels={'x': 't-SNE Dimension 1', 'y': 't-SNE Dimension 2'},
+            hover_data=["uniprot_id", "protein_name", "gene_name"],
+            color="length", # Color by protein length as a proxy for complexity
+            title="Protein Similarity Map (ESM-2 Latent Space)"
+        )
+        
+        # Highlight selected point
+        selected_point = plot_df.filter(pl.col("uniprot_id") == selected_id)
+        fig.add_scatter(
+            x=selected_point["x"], 
+            y=selected_point["y"], 
+            mode='markers', 
+            marker=dict(size=15, color='red', symbol='x'),
+            name='Selected'
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+else:
+    st.info("Click the button to run t-SNE projection.")
