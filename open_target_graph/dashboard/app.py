@@ -5,6 +5,7 @@ from sklearn.manifold import TSNE
 import plotly.express as px
 from stmol import showmol
 import py3Dmol
+import requests
 
 st.set_page_config(layout="wide", page_title="OpenTargetGraph")
 
@@ -51,8 +52,20 @@ with col1:
     st.subheader("3D Structure Preview")
     # We use AlphaFoldDB to get the structure (predicted) for this ID
     # Note: ESMFold is another option, but AlphaFoldDB is easiest for a demo
-    xyzview = py3Dmol.view(query=f'pdb:{selected_id}')
-    xyzview.setStyle({'cartoon':{'color':'spectrum'}})
+    # Use the API to find the correct URL (handles versioning automatically)
+    api_url = f"https://alphafold.ebi.ac.uk/api/prediction/{selected_id}"
+    api_response = requests.get(api_url)
+
+    xyzview = py3Dmol.view(width=400, height=300)
+    if api_response.ok and len(api_response.json()) > 0:
+        pdb_url = api_response.json()[0]["pdbUrl"]
+        pdb_response = requests.get(pdb_url)
+        xyzview.addModel(pdb_response.text, "pdb")
+        xyzview.setStyle({'cartoon':{'color':'spectrum'}})
+        xyzview.zoomTo()
+    else:
+        st.warning(f"Structure not found for {selected_id}")
+
     showmol(xyzview, height=300, width=400)
 
 with col2:
