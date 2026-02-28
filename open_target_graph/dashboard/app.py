@@ -73,8 +73,8 @@ with col2:
     st.markdown("Visualizing sequence similarity based on ESM-2 vectors.")
     
     # Run t-SNE (Dimensionality Reduction)
-    # In a real app, pre-calculate this!
-    if st.button("Generate Plot (Compute Heavy)"):
+    # Note: In a real app, may be faster to pre-compute this and store it.
+    if st.button("Generate Plot"):
         with st.spinner("Projecting 320-dim vectors to 2D..."):
             # Extract embeddings matrix
             matrix = np.array(df["embedding"].to_list())
