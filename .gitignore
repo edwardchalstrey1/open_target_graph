@@ -1,0 +1,52 @@
+# --- Python General ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+develop-eggs/
+
+# --- Virtual Environments (uv / pip) ---
+.venv/
+venv/
+env/
+
+# --- Environment Variables & Secrets ---
+# CRITICAL: Never commit keys/passwords
+.env
+.env.local
+.env.*
+
+# --- Dagster ---
+# Local storage for runs and logs
+.dagster/
+dagster_home/
+history/
+storage/
+
+# --- Data & Models ---
+# Ignore the actual data files we download/generate
+data/*
+# ...but keep the folder itself (if you add a .gitkeep file)
+!data/.gitkeep
+
+# Ignore large ML model weights if we download them locally
+*.pt
+*.pth
+*.ckpt
+models/
+
+# --- Pulumi (Infrastructure as Code) ---
+# Ignore local state/backup files
+.pulumi/
+# Ignore stack configuration files if they contain unencrypted secrets
+# (Usually Pulumi.yaml is committed, but be careful with dev/prod configs)
+# Pulumi.*.yaml
+
+# --- OS & IDEs ---
+.DS_Store
+.vscode/
+.idea/
+.ipynb_checkpoints/
