@@ -6,44 +6,110 @@ import plotly.express as px
 from stmol import showmol
 import py3Dmol
 import requests
+from typing import Optional, List
 
-st.set_page_config(layout="wide", page_title="OpenTargetGraph")
+# Constants
+DATA_PATH_KINASES = "data/kinases.parquet"
+DATA_PATH_EMBEDDINGS = "data/embeddings.parquet"
+ALPHAFOLD_API_URL = "https://alphafold.ebi.ac.uk/api/prediction/{}"
 
-st.title("🧬 OpenTargetGraph: AI-Driven Target Discovery")
-st.markdown("""
-This dashboard visualizes **Kinase targets** and their structural similarity using **ESM-2 Embeddings**. 
-Instead of traditional sequence alignment, we use a **Protein Language Model** to capture deep semantic relationships between proteins.
+def configure_page() -> None:
+    """Configures the Streamlit page settings."""
+    st.set_page_config(layout="wide", page_title="OpenTargetGraph")
 
-#### 🤖 Model: ESM-2
-**ESM-2** is a transformer-based model trained on millions of protein sequences. It converts a protein sequence into an embedding that encodes structural and functional properties.
-""")
+def render_header() -> None:
+    """Renders the dashboard header and description."""
+    st.title("🧬 OpenTargetGraph: AI-Driven Target Discovery")
+    st.markdown("""
+    This dashboard visualizes **Kinase targets** and their structural similarity using **ESM-2 Embeddings**. 
+    Instead of traditional sequence alignment, we use a **Protein Language Model** to capture deep semantic relationships between proteins.
+
+    #### 🤖 Model: ESM-2
+    **ESM-2** is a transformer-based model trained on millions of protein sequences. It converts a protein sequence into an embedding that encodes structural and functional properties.
+    """)
 
 # --- Load Data ---
 @st.cache_data
-def load_data():
-    # Load metadata and embeddings
-    df_meta = pl.read_parquet("data/kinases.parquet")
-    df_emb = pl.read_parquet("data/embeddings.parquet")
-    
-    # Join them on ID
-    df = df_meta.join(df_emb, on="uniprot_id")
-    return df
+def load_data() -> pl.DataFrame:
+    """
+    Loads kinase metadata and embeddings from Parquet files.
 
-try:
-    df = load_data()
-    st.success(f"Loaded {len(df)} targets with embeddings.")
-except Exception as e:
-    st.error("Data not found! Did you run the Dagster pipeline? (Check 'data/' folder)")
-    st.stop()
+    Returns:
+        pl.DataFrame: Joined DataFrame containing metadata and embeddings.
+    """
+    try:
+        df_meta = pl.read_parquet(DATA_PATH_KINASES)
+        df_emb = pl.read_parquet(DATA_PATH_EMBEDDINGS)
+        
+        # Join them on ID
+        return df_meta.join(df_emb, on="uniprot_id")
+    except Exception as e:
+        st.error(f"Data not found or error loading data: {e}")
+        st.stop()
 
-# --- App sections ---
+def fetch_pdb_data(uniprot_id: str) -> Optional[str]:
+    """
+    Fetches PDB structure data from AlphaFold DB for a given UniProt ID.
 
-def select_target():
+    Args:
+        uniprot_id (str): The UniProt accession ID.
+
+    Returns:
+        Optional[str]: The PDB file content as a string, or None if not found.
+    """
+    api_url = ALPHAFOLD_API_URL.format(uniprot_id)
+    try:
+        api_response = requests.get(api_url, timeout=5)
+        if api_response.ok and len(api_response.json()) > 0:
+            pdb_url = api_response.json()[0]["pdbUrl"]
+            pdb_response = requests.get(pdb_url, timeout=10)
+            if pdb_response.ok:
+                return pdb_response.text
+    except requests.RequestException:
+        return None
+    return None
+
+def create_3d_view(pdb_data: str, width: int = 400, height: int = 300) -> py3Dmol.view:
+    """
+    Creates a py3Dmol view object for a given PDB string.
+
+    Args:
+        pdb_data (str): The PDB file content.
+        width (int): Width of the viewer.
+        height (int): Height of the viewer.
+
+    Returns:
+        py3Dmol.view: The configured 3D view object.
+    """
+    view = py3Dmol.view(width=width, height=height)
+    view.addModel(pdb_data, "pdb")
+    view.setStyle({'cartoon': {'color': 'spectrum'}})
+    view.zoomTo()
+    return view
+
+def render_target_selection(df: pl.DataFrame) -> str:
+    """
+    Renders the target selection dropdown and details.
+
+    Args:
+        df (pl.DataFrame): The main dataframe.
+
+    Returns:
+        str: The selected UniProt ID.
+    """
     st.subheader("1. Select a Target")
+    
+    options = df["uniprot_id"].to_list()
+    
+    def format_func(uid: str) -> str:
+        # Optimization: In a real app, create a dict for O(1) lookup instead of filtering df every time
+        name = df.filter(pl.col('uniprot_id') == uid)['protein_name'][0]
+        return f"{uid} - {name}"
+
     selected_id = st.selectbox(
         "Choose a protein:", 
-        df["uniprot_id"].to_list(),
-        format_func=lambda x: f"{x} - {df.filter(pl.col('uniprot_id') == x)['protein_name'][0]}"
+        options,
+        format_func=format_func
     )
     
     # Get details
@@ -53,27 +119,50 @@ def select_target():
     st.text_area("Sequence", seq, height=100)
     return selected_id
 
-def structure_preview(selected_id):
-    st.subheader("3D Structure Preview")
-    # We use AlphaFoldDB to get the structure (predicted) for this ID
-    # Note: ESMFold is another option, but AlphaFoldDB is easiest for a demo
-    # Use the API to find the correct URL (handles versioning automatically)
-    api_url = f"https://alphafold.ebi.ac.uk/api/prediction/{selected_id}"
-    api_response = requests.get(api_url)
+def render_structure_preview(selected_id: str) -> None:
+    """
+    Renders the 3D structure preview section.
 
-    xyzview = py3Dmol.view(width=400, height=300)
-    if api_response.ok and len(api_response.json()) > 0:
-        pdb_url = api_response.json()[0]["pdbUrl"]
-        pdb_response = requests.get(pdb_url)
-        xyzview.addModel(pdb_response.text, "pdb")
-        xyzview.setStyle({'cartoon':{'color':'spectrum'}})
-        xyzview.zoomTo()
+    Args:
+        selected_id (str): The UniProt ID to visualize.
+    """
+    st.subheader("3D Structure Preview")
+    
+    pdb_data = fetch_pdb_data(selected_id)
+    
+    if pdb_data:
+        view = create_3d_view(pdb_data)
+        showmol(view, height=300, width=400)
     else:
         st.warning(f"Structure not found for {selected_id}")
+        # Show empty viewer to maintain layout
+        view = py3Dmol.view(width=400, height=300)
+        showmol(view, height=300, width=400)
 
-    showmol(xyzview, height=300, width=400)
+def compute_tsne_projection(embeddings: List[List[float]], perplexity: int = 30) -> np.ndarray:
+    """
+    Computes t-SNE projections for high-dimensional embeddings.
 
-def tsne_plot(selected_id):
+    Args:
+        embeddings (List[List[float]]): List of embedding vectors.
+        perplexity (int): t-SNE perplexity parameter.
+
+    Returns:
+        np.ndarray: 2D array of projected coordinates.
+    """
+    matrix = np.array(embeddings)
+    safe_perplexity = min(perplexity, len(embeddings) - 1)
+    tsne = TSNE(n_components=2, random_state=42, perplexity=safe_perplexity)
+    return tsne.fit_transform(matrix)
+
+def render_tsne_plot(df: pl.DataFrame, selected_id: str) -> None:
+    """
+    Renders the t-SNE embedding space visualization.
+
+    Args:
+        df (pl.DataFrame): The main dataframe containing embeddings.
+        selected_id (str): The currently selected UniProt ID to highlight.
+    """
     st.subheader("2. Embedding Space (t-SNE)")
     st.markdown("""
     **What is this plot?**
@@ -82,16 +171,10 @@ def tsne_plot(selected_id):
     * **Proximity**: Points closer together are "semantically" similar in the eyes of the AI model.
     """)
 
-    # Run t-SNE (Dimensionality Reduction)
-    # Note: In a real app, may be faster to pre-compute this and store it.
     if st.button("Generate Plot"):
         with st.spinner("Projecting 320-dim vectors to 2D..."):
-            # Extract embeddings matrix
-            matrix = np.array(df["embedding"].to_list())
-            
-            # Reduce to 2D
-            tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(df)-1))
-            projections = tsne.fit_transform(matrix)
+            embeddings = df["embedding"].to_list()
+            projections = compute_tsne_projection(embeddings)
             
             # Add to dataframe for plotting
             plot_df = df.with_columns([
@@ -105,32 +188,44 @@ def tsne_plot(selected_id):
                 x="x", y="y", 
                 labels={'x': 't-SNE Dimension 1', 'y': 't-SNE Dimension 2'},
                 hover_data=["uniprot_id", "protein_name", "gene_name"],
-                color="length", # Color by protein length as a proxy for complexity
+                color="length", 
                 title="Protein Similarity Map (ESM-2 Latent Space)"
             )
             
             # Highlight selected point
             selected_point = plot_df.filter(pl.col("uniprot_id") == selected_id)
-            fig.add_scatter(
-                x=selected_point["x"], 
-                y=selected_point["y"], 
-                mode='markers', 
-                marker=dict(size=15, color='red', symbol='x'),
-                name='Selected'
-            )
+            if not selected_point.is_empty():
+                fig.add_scatter(
+                    x=selected_point["x"], 
+                    y=selected_point["y"], 
+                    mode='markers', 
+                    marker=dict(size=15, color='red', symbol='x'),
+                    name='Selected'
+                )
             
             st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("Click the button to run t-SNE projection.")
 
-# --- Layout ---
-col1, col2 = st.columns(2)
-
-with col1:
-    selected_id = select_target()
+def main() -> None:
+    """Main execution entry point."""
+    configure_page()
+    render_header()
     
-with col2:
-    structure_preview(selected_id)
+    df = load_data()
+    st.success(f"Loaded {len(df)} targets with embeddings.")
+    
+    # Layout
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        selected_id = render_target_selection(df)
+        
+    with col2:
+        render_structure_preview(selected_id)
+    
+    st.divider()
+    render_tsne_plot(df, selected_id)
 
-st.divider()
-tsne_plot(selected_id)
+if __name__ == "__main__":
+    main()
