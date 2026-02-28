@@ -1,0 +1,29 @@
+[project]
+name = "open_target_graph"
+version = "0.1.0"
+description = "AI-Driven Drug Discovery Platform using Dagster and Polars"
+authors = [{name = "Ed Chalstrey", email = "edwardchalstrey@gmail.com"}]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "dagster",
+    "dagster-cloud",
+    "polars",
+    "requests",
+    "pyarrow",  # Required for Polars to write Parquet
+    "torch",    # For the ML layer (we'll add this later, but good to have now)
+    "transformers" # For HuggingFace models
+]
+
+[project.optional-dependencies]
+dev = [
+    "dagster-webserver", 
+    "pytest"
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "open_target_graph.definitions"
