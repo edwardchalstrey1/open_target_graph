@@ -25,6 +25,8 @@ env/
 dagster_home/
 history/
 storage/
+*.db
+*.sqlite
 
 # --- Data & Models ---
 # Ignore the actual data files we download/generate
