@@ -13,22 +13,26 @@ def test_generate_embeddings():
     """Unit test for the embedding generation logic."""
     # Mock tokenizer
     mock_tokenizer = MagicMock()
-    # Return a dict with tensors
+    # Return a dict with tensors. The shape doesn't strictly matter for this test's logic.
     mock_tokenizer.return_value = {
-        "input_ids": torch.zeros(2, 5),
-        "attention_mask": torch.zeros(2, 5)
+        "input_ids": torch.zeros(1, 5), # Simulating batch size of 1
+        "attention_mask": torch.zeros(1, 5)
     }
     
     # Mock model
     mock_model = MagicMock()
-    mock_output = MagicMock()
-    # Batch=2, Seq=5, Dim=3
-    # We create a tensor where the mean will be predictable
-    mock_output.last_hidden_state = torch.tensor([
-        [[1.0, 1.0, 1.0]] * 5, # Mean = [1, 1, 1]
-        [[2.0, 2.0, 2.0]] * 5  # Mean = [2, 2, 2]
-    ])
-    mock_model.return_value = mock_output
+
+    # Create two distinct outputs for the two expected calls
+    mock_output_1 = MagicMock()
+    # Batch=1, Seq=5, Dim=3. Mean will be [1.0, 1.0, 1.0]
+    mock_output_1.last_hidden_state = torch.tensor([[[1.0, 1.0, 1.0]] * 5])
+
+    mock_output_2 = MagicMock()
+    # Batch=1, Seq=5, Dim=3. Mean will be [2.0, 2.0, 2.0]
+    mock_output_2.last_hidden_state = torch.tensor([[[2.0, 2.0, 2.0]] * 5])
+
+    # Use side_effect to return a different output on each call to the model
+    mock_model.side_effect = [mock_output_1, mock_output_2]
     
     sequences = ["SEQ1", "SEQ2"]
     
@@ -39,8 +43,9 @@ def test_generate_embeddings():
     assert embeddings[0] == [1.0, 1.0, 1.0]
     assert embeddings[1] == [2.0, 2.0, 2.0]
     
-    # Verify tokenizer called twice (because batch_size=1 and 2 sequences)
+    # Verify tokenizer and model were each called twice
     assert mock_tokenizer.call_count == 2
+    assert mock_model.call_count == 2
 
 
 def test_protein_embeddings_asset(mocker):
