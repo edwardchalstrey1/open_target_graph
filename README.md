@@ -69,6 +69,19 @@ This section describes how to run the project in its current state, which consis
 *   Python 3.9+
 *   [uv](https://github.com/astral-sh/uv): A fast Python package installer and resolver, used for environment management.
 
+### 0. Hugging Face Authentication (Optional but Recommended)
+
+The modeling pipeline downloads the `facebook/esm2...` model from the Hugging Face Hub. To avoid rate limits and enable faster downloads, you should use an access token.
+
+1.  Create a free account on HuggingFace.co.
+2.  Go to your **Access Tokens** and create a new token with `read` permissions.
+3.  Create a `.env` file in the root of the project.
+4.  Add your token to the `.env` file. Dagster will automatically load this for you.
+    ```
+    HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    ```
+5.  Ensure `.env` is added to your `.gitignore` file to avoid committing secrets.
+
 ### 1. Installation
 
 Clone the repository and create a virtual environment using `uv`.
