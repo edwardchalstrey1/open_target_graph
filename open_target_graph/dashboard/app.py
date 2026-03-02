@@ -190,19 +190,18 @@ def render_similarity_search(df: pl.DataFrame, selected_id: str) -> None:
     st.subheader("3. Find Similar Targets")
     st.markdown("Find the most similar proteins in the high-dimensional embedding space using cosine similarity. This is more powerful than sequence alignment as it captures functional and structural relationships learned by the ESM-2 model.")
 
-    if st.button("Find Top 5 Similar Targets"):
-        with st.spinner("Calculating similarities across all targets..."):
-            similar_targets = find_similar_targets(df, selected_id, top_n=5)
-            
-            st.write("Most similar targets:")
-            st.dataframe(
-                similar_targets.select(
-                    "uniprot_id", "protein_name", "gene_name", "similarity"
-                ).to_pandas().style.format({"similarity": "{:.4f}"}),
-                use_container_width=True,
-                hide_index=True,
-            )
+    similar_targets = find_similar_targets(df, selected_id, top_n=5)
+    
+    st.write("Most similar targets:")
+    st.dataframe(
+        similar_targets.select(
+            "uniprot_id", "protein_name", "gene_name", "similarity"
+        ).to_pandas().style.format({"similarity": "{:.4f}"}),
+        use_container_width=True,
+        hide_index=True,
+    )
 
+@st.cache_data
 def compute_tsne_projection(embeddings: List[List[float]], perplexity: int = 30) -> np.ndarray:
     """
     Computes t-SNE projections for high-dimensional embeddings.
@@ -235,41 +234,37 @@ def render_tsne_plot(df: pl.DataFrame, selected_id: str) -> None:
     * **Proximity**: Points closer together are "semantically" similar in the eyes of the AI model.
     """)
 
-    if st.button("Generate Plot"):
-        with st.spinner("Projecting 320-dim vectors to 2D..."):
-            embeddings = df["embedding"].to_list()
-            projections = compute_tsne_projection(embeddings)
-            
-            # Add to dataframe for plotting
-            plot_df = df.with_columns([
-                pl.Series("x", projections[:, 0]),
-                pl.Series("y", projections[:, 1])
-            ])
-            
-            # Plot
-            fig = px.scatter(
-                plot_df.to_pandas(), 
-                x="x", y="y", 
-                labels={'x': 't-SNE Dimension 1', 'y': 't-SNE Dimension 2'},
-                hover_data=["uniprot_id", "protein_name", "gene_name"],
-                color="length", 
-                title="Protein Similarity Map (ESM-2 Latent Space)"
-            )
-            
-            # Highlight selected point
-            selected_point = plot_df.filter(pl.col("uniprot_id") == selected_id)
-            if not selected_point.is_empty():
-                fig.add_scatter(
-                    x=selected_point["x"], 
-                    y=selected_point["y"], 
-                    mode='markers', 
-                    marker=dict(size=15, color='red', symbol='x'),
-                    name='Selected'
-                )
-            
-            st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("Click the button to run t-SNE projection.")
+    embeddings = df["embedding"].to_list()
+    projections = compute_tsne_projection(embeddings)
+    
+    # Add to dataframe for plotting
+    plot_df = df.with_columns([
+        pl.Series("x", projections[:, 0]),
+        pl.Series("y", projections[:, 1])
+    ])
+    
+    # Plot
+    fig = px.scatter(
+        plot_df.to_pandas(), 
+        x="x", y="y", 
+        labels={'x': 't-SNE Dimension 1', 'y': 't-SNE Dimension 2'},
+        hover_data=["uniprot_id", "protein_name", "gene_name"],
+        color="length", 
+        title="Protein Similarity Map (ESM-2 Latent Space)"
+    )
+    
+    # Highlight selected point
+    selected_point = plot_df.filter(pl.col("uniprot_id") == selected_id)
+    if not selected_point.is_empty():
+        fig.add_scatter(
+            x=selected_point["x"], 
+            y=selected_point["y"], 
+            mode='markers', 
+            marker=dict(size=15, color='red', symbol='x'),
+            name='Selected'
+        )
+    
+    st.plotly_chart(fig, use_container_width=True)
 
 def main() -> None:
     """Main execution entry point."""
@@ -289,9 +284,12 @@ def main() -> None:
         render_structure_preview(selected_id)
     
     st.divider()
-    render_similarity_search(df, selected_id)
-    st.divider()
-    render_tsne_plot(df, selected_id)
+    
+    col3, col4 = st.columns(2)
+    with col3:
+        render_similarity_search(df, selected_id)
+    with col4:
+        render_tsne_plot(df, selected_id)
 
 if __name__ == "__main__":
     main()
