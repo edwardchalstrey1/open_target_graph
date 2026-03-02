@@ -57,3 +57,48 @@ graph TD
         G -.->|pgvector| H[Streamlit App]
     end
 ```
+
+# Developer documentation
+
+## 🛠️ Local Setup (Current Status)
+
+This section describes how to run the project in its current state, which consists of a local Dagster pipeline and a Streamlit dashboard.
+
+### Prerequisites
+
+*   Python 3.9+
+*   [uv](https://github.com/astral-sh/uv): A fast Python package installer and resolver, used for environment management.
+
+### 1. Installation
+
+Clone the repository and create a virtual environment using `uv`.
+
+```bash
+# Create and activate a virtual environment
+uv venv
+source .venv/bin/activate
+
+# Install dependencies
+uv pip install -r requirements.txt
+```
+
+### 2. Run the Data Pipeline (Dagster)
+
+The project uses Dagster to orchestrate data fetching and ML model inference. Run the following command to launch the Dagster UI:
+
+```bash
+# This will start the Dagster UI, typically at http://localhost:3000
+dagster dev
+```
+
+Navigate to the Dagster UI in your browser. Find and materialize the assets (`kinases_parquet` and `embeddings_parquet`). This will execute the pipeline, download the data from UniProt, generate embeddings, and save the results into the `data/` directory.
+
+### 3. Run the Dashboard (Streamlit)
+
+Once the data assets from the pipeline exist in the `data/` folder, you can launch the interactive Streamlit dashboard.
+
+```bash
+streamlit run open_target_graph/dashboard/app.py
+```
+
+The application will now be running and accessible, typically at `http://localhost:8501`.
