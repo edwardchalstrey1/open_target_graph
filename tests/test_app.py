@@ -1,8 +1,9 @@
 import pytest
 import requests
 import numpy as np
+import polars as pl
 
-from open_target_graph.dashboard.app import fetch_pdb_data, compute_tsne_projection
+from open_target_graph.dashboard.app import fetch_pdb_data, compute_tsne_projection, find_similar_targets
 
 
 class MockResponse:
@@ -62,3 +63,40 @@ def test_compute_tsne_projection_empty_input():
     """Tests t-SNE with empty input."""
     with pytest.raises(ValueError):
         compute_tsne_projection([])
+
+
+def test_find_similar_targets():
+    """Tests cosine similarity search logic."""
+    # Create dummy data
+    # Target: [1.0, 0.0]
+    # Match:  [0.99, 0.0] (Same direction, different magnitude -> Sim = 1.0)
+    # Ortho:  [0.0, 1.0]  (Orthogonal -> Sim = 0.0)
+    # Oppos:  [-1.0, 0.0] (Opposite -> Sim = -1.0)
+    
+    data = {
+        "uniprot_id": ["TGT", "MATCH", "ORTHO", "OPPOS"],
+        "protein_name": ["Target", "Match", "Ortho", "Oppos"],
+        "gene_name": ["T", "M", "O", "O"],
+        "embedding": [
+            [1.0, 0.0],
+            [0.99, 0.0], 
+            [0.0, 1.0],
+            [-1.0, 0.0]
+        ]
+    }
+    df = pl.DataFrame(data)
+    
+    # Find similar to "TGT", top_n=2
+    # Should filter out TGT itself.
+    # Expected order: MATCH (sim=1.0), ORTHO (sim=0.0), OPPOS (sim=-1.0)
+    results = find_similar_targets(df, "TGT", top_n=2)
+    
+    assert len(results) == 2
+    assert results["uniprot_id"][0] == "MATCH"
+    assert results["uniprot_id"][1] == "ORTHO"
+    
+    # Check similarity values
+    # MATCH: (1*0.99 + 0*0) / (1 * 0.99) = 1.0
+    assert results["similarity"][0] == pytest.approx(1.0, rel=1e-3)
+    # ORTHO: 0.0
+    assert results["similarity"][1] == pytest.approx(0.0, abs=1e-3)
