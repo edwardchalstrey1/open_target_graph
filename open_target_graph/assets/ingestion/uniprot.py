@@ -1,12 +1,19 @@
 import polars as pl
 import requests
-from dagster import asset, Output, AssetExecutionContext
+from dagster import asset, AssetExecutionContext
 
 @asset(
     group_name="ingestion",
     description="Fetches Human Kinase proteins from UniProt API and converts to Polars DataFrame"
 )
 def raw_uniprot_kinases(context: AssetExecutionContext) -> pl.DataFrame:
+    """
+    This asset fetches human kinase protein data from the UniProt API, parses the relevant fields, and returns a Polars DataFrame.
+    Args:
+        context: The Dagster AssetExecutionContext for logging and asset management.
+    Returns:
+        pl.DataFrame: A DataFrame containing UniProt IDs, protein names, gene names, sequences, and sequence lengths for human kinase proteins.
+    """
     # UniProt API Query: Human (9606) AND Family:Kinase
     url = "https://rest.uniprot.org/uniprotkb/search?query=(taxonomy_id:9606)%20AND%20(family:kinase)&format=json&size=100"
     
@@ -38,6 +45,14 @@ def raw_uniprot_kinases(context: AssetExecutionContext) -> pl.DataFrame:
     description="Saves the raw UniProt data to Parquet for downstream processing"
 )
 def uniprot_parquet(context: AssetExecutionContext, raw_uniprot_kinases: pl.DataFrame):
+    """
+    This asset saves the raw UniProt data to a Parquet file for downstream processing.
+    Args:
+        context: The Dagster AssetExecutionContext for logging and asset management.
+        raw_uniprot_kinases: The Polars DataFrame containing the raw UniProt kinase data.
+    Returns:
+        str: The path to the saved Parquet file.
+    """
     save_path = "data/kinases.parquet"
     raw_uniprot_kinases.write_parquet(save_path)
     context.log.info(f"Saved parquet file to {save_path}")

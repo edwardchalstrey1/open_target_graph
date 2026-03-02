@@ -12,6 +12,14 @@ MODEL_NAME = "facebook/esm2_t6_8M_UR50D"
     description="Generates vector embeddings for protein sequences using ESM-2"
 )
 def protein_embeddings(context: AssetExecutionContext, uniprot_parquet: str) -> str:
+    """
+    This asset takes the raw kinase sequences, runs them through the ESM-2 model to generate embeddings, and saves the results.
+    Args:
+        context: The Dagster AssetExecutionContext.
+        uniprot_parquet: The path to the parquet file containing the raw kinase sequences.
+    Returns:
+        The path to the saved parquet file with embeddings.
+    """
     # 1. Load the raw data
     df = pl.read_parquet(uniprot_parquet)
     sequences = df["sequence"].to_list()
