@@ -87,6 +87,46 @@ def create_3d_view(pdb_data: str, width: int = 400, height: int = 300) -> py3Dmo
     view.zoomTo()
     return view
 
+def find_similar_targets(df: pl.DataFrame, selected_id: str, top_n: int = 5) -> pl.DataFrame:
+    """
+    Finds the most similar targets to a selected protein based on cosine similarity of their embeddings.
+
+    Args:
+        df (pl.DataFrame): The DataFrame with embeddings.
+        selected_id (str): The UniProt ID of the protein to compare against.
+        top_n (int): The number of similar targets to return.
+
+    Returns:
+        pl.DataFrame: A DataFrame of the top N similar targets and their similarity scores.
+    """
+    # 1. Get the embedding for the selected target.
+    target_embedding = df.filter(pl.col("uniprot_id") == selected_id)["embedding"][0]
+
+    # 2. Calculate cosine similarity using pure Polars expressions for performance.
+    # Cosine Similarity = (A · B) / (||A|| * ||B||)
+    
+    # A · B (dot product)
+    dot_product = pl.col("embedding").list.eval(
+        pl.element() * pl.lit(pl.Series(target_embedding))
+    ).list.sum()
+
+    # ||A|| (L2 norm of target)
+    norm_target = np.linalg.norm(np.array(target_embedding))
+
+    # ||B|| (L2 norm of other vectors in the column)
+    norm_other = pl.col("embedding").list.eval(
+        pl.element().pow(2)
+    ).list.sum().sqrt()
+
+    similarity_expr = (dot_product / (pl.lit(norm_target) * norm_other)).alias("similarity")
+
+    # 3. Apply expression, sort, filter out the original protein, and take the top N.
+    return df.with_columns(
+        similarity_expr
+    ).sort("similarity", descending=True).filter(
+        pl.col("uniprot_id") != selected_id
+    ).head(top_n)
+
 def render_target_selection(df: pl.DataFrame) -> str:
     """
     Renders the target selection dropdown and details.
@@ -126,7 +166,7 @@ def render_structure_preview(selected_id: str) -> None:
     Args:
         selected_id (str): The UniProt ID to visualize.
     """
-    st.subheader("3D Structure Preview")
+    st.subheader("2. 3D Structure Preview")
     
     pdb_data = fetch_pdb_data(selected_id)
     
@@ -138,6 +178,30 @@ def render_structure_preview(selected_id: str) -> None:
         # Show empty viewer to maintain layout
         view = py3Dmol.view(width=400, height=300)
         showmol(view, height=300, width=400)
+
+def render_similarity_search(df: pl.DataFrame, selected_id: str) -> None:
+    """
+    Renders the UI for finding and displaying similar targets.
+
+    Args:
+        df (pl.DataFrame): The main dataframe.
+        selected_id (str): The currently selected UniProt ID.
+    """
+    st.subheader("3. Find Similar Targets")
+    st.markdown("Find the most similar proteins in the high-dimensional embedding space using cosine similarity. This is more powerful than sequence alignment as it captures functional and structural relationships learned by the ESM-2 model.")
+
+    if st.button("Find Top 5 Similar Targets"):
+        with st.spinner("Calculating similarities across all targets..."):
+            similar_targets = find_similar_targets(df, selected_id, top_n=5)
+            
+            st.write("Most similar targets:")
+            st.dataframe(
+                similar_targets.select(
+                    "uniprot_id", "protein_name", "gene_name", "similarity"
+                ).to_pandas().style.format({"similarity": "{:.4f}"}),
+                use_container_width=True,
+                hide_index=True,
+            )
 
 def compute_tsne_projection(embeddings: List[List[float]], perplexity: int = 30) -> np.ndarray:
     """
@@ -163,7 +227,7 @@ def render_tsne_plot(df: pl.DataFrame, selected_id: str) -> None:
         df (pl.DataFrame): The main dataframe containing embeddings.
         selected_id (str): The currently selected UniProt ID to highlight.
     """
-    st.subheader("2. Embedding Space (t-SNE)")
+    st.subheader("4. Embedding Space (t-SNE)")
     st.markdown("""
     **What is this plot?**
     We use **t-SNE** (t-Distributed Stochastic Neighbor Embedding) to project the 320-dimensional ESM-2 vectors down to 2D.
@@ -224,6 +288,8 @@ def main() -> None:
     with col2:
         render_structure_preview(selected_id)
     
+    st.divider()
+    render_similarity_search(df, selected_id)
     st.divider()
     render_tsne_plot(df, selected_id)
 
