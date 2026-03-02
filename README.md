@@ -91,8 +91,8 @@ Clone the repository and create a virtual environment using `uv`.
 uv venv
 source .venv/bin/activate
 
-# Install dependencies
-uv pip install -r requirements.txt
+# Install dependencies in editable mode with dev tools
+uv pip install -e ".[dev]"
 ```
 
 ### 2. Run the Data Pipeline (Dagster)
@@ -104,7 +104,7 @@ The project uses Dagster to orchestrate data fetching and ML model inference. Ru
 dagster dev
 ```
 
-Navigate to the Dagster UI in your browser. Find and materialize the assets (`kinases_parquet` and `embeddings_parquet`). This will execute the pipeline, download the data from UniProt, generate embeddings, and save the results into the `data/` directory.
+Navigate to the Dagster UI in your browser. Find and materialize the assets (`uniprot_parquet` and `protein_embeddings`). This will execute the pipeline, download the data from UniProt, generate embeddings, and save the results into the `data/` directory.
 
 ### 3. Run the Dashboard (Streamlit)
 
