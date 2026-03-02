@@ -87,11 +87,7 @@ The modeling pipeline downloads the `facebook/esm2...` model from the Hugging Fa
 Clone the repository and create a virtual environment using `uv`.
 
 ```bash
-# Create and activate a virtual environment
 uv venv
-source .venv/bin/activate
-
-# Install dependencies in editable mode with dev tools
 uv pip install -e ".[dev]"
 ```
 
@@ -100,9 +96,10 @@ uv pip install -e ".[dev]"
 The project uses Dagster to orchestrate data fetching and ML model inference. Run the following command to launch the Dagster UI:
 
 ```bash
-# This will start the Dagster UI, typically at http://localhost:3000
-dagster dev
+uv run dagster dev
 ```
+
+This will start the Dagster UI, typically at http://localhost:3000
 
 Navigate to the Dagster UI in your browser. Find and materialize the assets (`uniprot_parquet` and `protein_embeddings`). This will execute the pipeline, download the data from UniProt, generate embeddings, and save the results into the `data/` directory.
 
@@ -111,7 +108,13 @@ Navigate to the Dagster UI in your browser. Find and materialize the assets (`un
 Once the data assets from the pipeline exist in the `data/` folder, you can launch the interactive Streamlit dashboard.
 
 ```bash
-streamlit run open_target_graph/dashboard/app.py
+uv run streamlit run open_target_graph/dashboard/app.py
 ```
 
 The application will now be running and accessible, typically at `http://localhost:8501`.
+
+## Testing
+
+```bash
+uv run pytest
+```
