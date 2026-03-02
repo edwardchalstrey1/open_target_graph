@@ -127,15 +127,12 @@ def find_similar_targets(df: pl.DataFrame, selected_id: str, top_n: int = 5) -> 
         pl.col("uniprot_id") != selected_id
     ).head(top_n)
 
-def render_target_selection(df: pl.DataFrame) -> str:
+def render_target_selection(df: pl.DataFrame) -> None:
     """
     Renders the target selection dropdown and details.
 
     Args:
         df (pl.DataFrame): The main dataframe.
-
-    Returns:
-        str: The selected UniProt ID.
     """
     st.subheader("Select a Target")
     
@@ -146,18 +143,19 @@ def render_target_selection(df: pl.DataFrame) -> str:
         name = df.filter(pl.col('uniprot_id') == uid)['protein_name'][0]
         return f"{uid} - {name}"
 
-    selected_id = st.selectbox(
+    # Use a key to link this widget to the session state
+    st.selectbox(
         "Choose a protein:", 
         options,
-        format_func=format_func
+        format_func=format_func,
+        key="selected_id"
     )
     
     # Get details
-    target_row = df.filter(pl.col("uniprot_id") == selected_id)
+    target_row = df.filter(pl.col("uniprot_id") == st.session_state.selected_id)
     seq = target_row["sequence"][0]
     
     st.text_area("Sequence", seq, height=100)
-    return selected_id
 
 def render_structure_preview(selected_id: str) -> None:
     """
@@ -218,13 +216,12 @@ def compute_tsne_projection(embeddings: List[List[float]], perplexity: int = 30)
     tsne = TSNE(n_components=2, random_state=42, perplexity=safe_perplexity)
     return tsne.fit_transform(matrix)
 
-def render_tsne_plot(df: pl.DataFrame, selected_id: str) -> None:
+def render_tsne_plot(df: pl.DataFrame) -> None:
     """
     Renders the t-SNE embedding space visualization.
 
     Args:
         df (pl.DataFrame): The main dataframe containing embeddings.
-        selected_id (str): The currently selected UniProt ID to highlight.
     """
     st.subheader("Embedding Space (t-SNE)")
     st.markdown("""
@@ -248,13 +245,14 @@ def render_tsne_plot(df: pl.DataFrame, selected_id: str) -> None:
         plot_df.to_pandas(), 
         x="x", y="y", 
         labels={'x': 't-SNE Dimension 1', 'y': 't-SNE Dimension 2'},
-        hover_data=["uniprot_id", "protein_name", "gene_name"],
+        hover_data=["protein_name", "gene_name"],
+        custom_data=["uniprot_id"],
         color="length", 
         title="Protein Similarity Map (ESM-2 Latent Space)"
     )
     
     # Highlight selected point
-    selected_point = plot_df.filter(pl.col("uniprot_id") == selected_id)
+    selected_point = plot_df.filter(pl.col("uniprot_id") == st.session_state.selected_id)
     if not selected_point.is_empty():
         fig.add_scatter(
             x=selected_point["x"], 
@@ -264,7 +262,17 @@ def render_tsne_plot(df: pl.DataFrame, selected_id: str) -> None:
             name='Selected'
         )
     
-    st.plotly_chart(fig, use_container_width=True)
+    # Enable click events and capture the output
+    event = st.plotly_chart(fig, use_container_width=True, on_select="rerun", selection_mode="points")
+
+    # If a point is clicked, update the session state and rerun the app
+    if event and "selection" in event and event["selection"]["points"]:
+        point = event["selection"]["points"][0]
+        if "customdata" in point:
+            clicked_id = point["customdata"][0]
+            if st.session_state.selected_id != clicked_id:
+                st.session_state.plot_selection = clicked_id
+                st.rerun()
 
 def main() -> None:
     """Main execution entry point."""
@@ -273,23 +281,34 @@ def main() -> None:
     
     df = load_data()
     st.success(f"Loaded {len(df)} targets with embeddings.")
+
+    # Check if a selection was made from the plot in the previous run
+    if "plot_selection" in st.session_state:
+        # Update the primary selection key
+        st.session_state.selected_id = st.session_state.plot_selection
+        # Clean up the temporary key
+        del st.session_state.plot_selection
+
+    # Initialize session state for the selected protein if it doesn't exist.
+    if "selected_id" not in st.session_state:
+        st.session_state.selected_id = df["uniprot_id"][0]
     
     # Layout
     col1, col2 = st.columns(2)
     
     with col1:
-        selected_id = render_target_selection(df)
+        render_target_selection(df)
         
     with col2:
-        render_structure_preview(selected_id)
+        render_structure_preview(st.session_state.selected_id)
     
     st.divider()
     
     col3, col4 = st.columns(2)
     with col3:
-        render_similarity_search(df, selected_id)
+        render_similarity_search(df, st.session_state.selected_id)
     with col4:
-        render_tsne_plot(df, selected_id)
+        render_tsne_plot(df)
 
 if __name__ == "__main__":
     main()
