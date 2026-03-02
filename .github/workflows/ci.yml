@@ -24,7 +24,7 @@ jobs:
           source $HOME/.cargo/env
 
       - name: Install dependencies
-        run: uv pip install -e ".[dev]"
+        run: uv pip install --system -e ".[dev]"
 
       - name: Run tests
-        run: uv run pytest
+        run: pytest
