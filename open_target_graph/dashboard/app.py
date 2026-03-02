@@ -137,7 +137,7 @@ def render_target_selection(df: pl.DataFrame) -> str:
     Returns:
         str: The selected UniProt ID.
     """
-    st.subheader("1. Select a Target")
+    st.subheader("Select a Target")
     
     options = df["uniprot_id"].to_list()
     
@@ -166,7 +166,7 @@ def render_structure_preview(selected_id: str) -> None:
     Args:
         selected_id (str): The UniProt ID to visualize.
     """
-    st.subheader("2. 3D Structure Preview")
+    st.subheader("3D Structure Preview")
     
     pdb_data = fetch_pdb_data(selected_id)
     
@@ -187,7 +187,7 @@ def render_similarity_search(df: pl.DataFrame, selected_id: str) -> None:
         df (pl.DataFrame): The main dataframe.
         selected_id (str): The currently selected UniProt ID.
     """
-    st.subheader("3. Find Similar Targets")
+    st.subheader("Find Similar Targets")
     st.markdown("Find the most similar proteins in the high-dimensional embedding space using cosine similarity. This is more powerful than sequence alignment as it captures functional and structural relationships learned by the ESM-2 model.")
 
     similar_targets = find_similar_targets(df, selected_id, top_n=5)
@@ -226,7 +226,7 @@ def render_tsne_plot(df: pl.DataFrame, selected_id: str) -> None:
         df (pl.DataFrame): The main dataframe containing embeddings.
         selected_id (str): The currently selected UniProt ID to highlight.
     """
-    st.subheader("4. Embedding Space (t-SNE)")
+    st.subheader("Embedding Space (t-SNE)")
     st.markdown("""
     **What is this plot?**
     We use **t-SNE** (t-Distributed Stochastic Neighbor Embedding) to project the 320-dimensional ESM-2 vectors down to 2D.
