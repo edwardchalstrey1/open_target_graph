@@ -19,9 +19,9 @@ This platform answers the question: *Which drug targets are structurally similar
 2.  **AI Analysis**: Generates high-dimensional vector embeddings for protein sequences using Meta AI's **ESM-2 (Evolutionary Scale Modeling)** transformer.
 3.  **Knowledge Graph**: Links targets to drugs in a relational schema, enabling complex queries about bioactivity and mechanism of action.
 4.  **Visualization**: A **Streamlit** dashboard that offers:
-    * 3D Protein Structure rendering (via Py3Dmol).
-    * "Embedding Space" UMAP projection to find novel clusters of similar targets.
-    * Semantic search for drug candidates.
+    *   3D Protein Structure rendering (via Py3Dmol).
+    *   An "Embedding Space" t-SNE projection to find novel clusters of similar targets.
+    *   **Semantic search for drug candidates** based on protein similarity.
 
 📦 Project Structure
 --------------------
