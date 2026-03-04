@@ -25,13 +25,14 @@ This platform answers the question: *Which drug targets are structurally similar
 --------------------
 
 ```
-├── assets/             # Dagster Software-Defined Assets
-│   ├── ingestion/      # ETL logic for UniProt/ChEMBL
-│   └── modeling/       # PyTorch inference logic
-├── dashboard/          # Streamlit frontend application
-├── infra/              # Pulumi IaC definitions
-├── data/               # Local storage for Parquet files (gitignored)
-└── Dockerfile          # Multi-stage build for the platform
+├── open_target_graph/
+│   ├── assets/             # Dagster Software-Defined Assets
+│   │   ├── ingestion/      # ETL logic for UniProt/ChEMBL
+│   │   └── modeling/       # PyTorch inference logic
+│   └── dashboard/          # Streamlit frontend application
+├── infra/                  # Pulumi IaC definitions
+├── data/                   # Local storage for Parquet files (gitignored)
+└── Dockerfile              # Multi-stage build for the platform
 ```
 
 ## 🏗️ Architecture
