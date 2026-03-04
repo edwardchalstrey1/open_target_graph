@@ -232,8 +232,8 @@ def test_render_structure_preview_found(mocker):
     render_structure_preview("A")
     
     mock_fetch_pdb.assert_called_once_with("A")
-    mock_create_view.assert_called_once_with("PDB_DATA", width="100%", height=400)
-    mock_showmol.assert_called_once_with("MOCK_VIEW", width=None, height=400)
+    mock_create_view.assert_called_once_with("PDB_DATA", width="100%", height=500)
+    mock_showmol.assert_called_once_with("MOCK_VIEW", width=None, height=500)
 
 
 def test_render_structure_preview_not_found(mocker):
