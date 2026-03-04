@@ -201,12 +201,11 @@ def render_similarity_search(df: pl.DataFrame, selected_id: str) -> pl.DataFrame
     Returns:
         pl.DataFrame: The dataframe containing top similar targets.
     """
-    st.subheader("Most Similar Targets")
-    st.markdown("Find the most similar proteins in the high-dimensional embedding space using cosine similarity. This is more powerful than sequence alignment as it captures functional and structural relationships learned by the ESM-2 model.")
+    top_n = 5
+    st.markdown(f"The table below shows the top {top_n} most similar protein targets in the high-dimensional embedding space using cosine similarity. This is more powerful than sequence alignment as it captures functional and structural relationships learned by the ESM-2 model.")
 
-    similar_targets = find_similar_targets(df, selected_id, top_n=5)
+    similar_targets = find_similar_targets(df, selected_id, top_n=top_n)
     
-    st.write("Most similar targets:")
     st.dataframe(
         similar_targets.select("uniprot_id", "protein_name", "gene_name", "similarity")
         .to_pandas()
@@ -350,6 +349,7 @@ def main() -> None:
     
     with col1:
         render_target_selection(df)
+        similar_targets_df = render_similarity_search(df, st.session_state.selected_id)
         
     with col2:
         render_structure_preview(st.session_state.selected_id)
@@ -358,11 +358,9 @@ def main() -> None:
     
     col3, col4 = st.columns(2)
     with col3:
-        similar_targets_df = render_similarity_search(df, st.session_state.selected_id)
-        st.divider()
-        render_drug_candidates(chembl_df, similar_targets_df, st.session_state.selected_id)
+        render_tsne_plot(df) 
     with col4:
-        render_tsne_plot(df)
+        render_drug_candidates(chembl_df, similar_targets_df, st.session_state.selected_id)
 
 if __name__ == "__main__":
     main()
