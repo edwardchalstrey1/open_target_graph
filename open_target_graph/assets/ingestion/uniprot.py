@@ -15,7 +15,9 @@ def raw_uniprot_kinases(context: AssetExecutionContext) -> pl.DataFrame:
         pl.DataFrame: A DataFrame containing UniProt IDs, protein names, gene names, sequences, and sequence lengths for human kinase proteins.
     """
     # UniProt API Query: Human (9606) AND Family:Kinase
-    url = "https://rest.uniprot.org/uniprotkb/search?query=(taxonomy_id:9606)%20AND%20(family:kinase)&format=json&size=100"
+    # TODO: Make this configurable
+    num_kinases = 10
+    url = f"https://rest.uniprot.org/uniprotkb/search?query=(taxonomy_id:9606)%20AND%20(family:kinase)&format=json&size={num_kinases}"
     
     context.log.info(f"Fetching data from: {url}")
     response = requests.get(url)
