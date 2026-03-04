@@ -116,6 +116,18 @@ uv run streamlit run open_target_graph/dashboard/app.py
 
 The application will now be running and accessible, typically at `http://localhost:8501`.
 
+## 🐳 Docker Setup
+
+To run the entire application stack including Dagster, PostgreSQL (with `pgvector`), and the Streamlit dashboard all at once:
+
+1. Ensure Docker is installed and running.
+2. Run the following command from the project root:
+   ```bash
+   docker compose up --build -d
+   ```
+3. Open the Dagster UI at http://localhost:3000 and materialize the assets (including `load_to_postgres`).
+4. Wait for the data ingestion to finish, then open Streamlit at http://localhost:8501.
+
 ## Testing
 
 ```bash

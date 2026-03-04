@@ -6,13 +6,20 @@ import plotly.express as px
 from stmol import showmol
 import py3Dmol
 import requests
+import os
+from sqlalchemy import create_engine, text
 from typing import Optional, List
 
 # Constants
-DATA_PATH_KINASES = "data/kinases.parquet"
-DATA_PATH_EMBEDDINGS = "data/embeddings.parquet"
-DATA_PATH_CHEMBL = "data/chembl_activity.parquet"
 ALPHAFOLD_API_URL = "https://alphafold.ebi.ac.uk/api/prediction/{}"
+
+def get_db_connection_string() -> str:
+    user = os.environ.get("DB_USER", "admin")
+    password = os.environ.get("DB_PASSWORD", "password")
+    host = os.environ.get("DB_HOST", "localhost")
+    port = os.environ.get("DB_PORT", "5432")
+    db_name = os.environ.get("DB_NAME", "open_target_graph")
+    return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
 
 def configure_page() -> None:
     """Configures the Streamlit page settings."""
@@ -33,31 +40,45 @@ def render_header() -> None:
 @st.cache_data
 def load_data() -> pl.DataFrame:
     """
-    Loads kinase metadata and embeddings from Parquet files.
-
-    Returns:
-        pl.DataFrame: Joined DataFrame containing metadata and embeddings.
+    Loads kinase metadata and embeddings from Postgres.
     """
     try:
-        df_meta = pl.read_parquet(DATA_PATH_KINASES)
-        df_emb = pl.read_parquet(DATA_PATH_EMBEDDINGS)
+        engine = create_engine(get_db_connection_string())
         
-        # Join them on ID
-        return df_meta.join(df_emb, on="uniprot_id")
+        # We need the vector as a list/array for the t-SNE plot later
+        query = """
+            SELECT k.*, e.embedding::text as embedding_str
+            FROM kinases k
+            JOIN embeddings e ON k.uniprot_id = e.uniprot_id
+        """
+        df = pl.read_database(query, engine)
+        
+        # Convert the string representation of vector '[0.1, 0.2, ...]' back to a list of floats
+        df = df.with_columns(
+            pl.col("embedding_str")
+            .str.replace(r"^\[", "").str.replace(r"\]$", "")
+            .str.replace_all(" ", "")
+            .str.split(",")
+            .list.eval(pl.element().cast(pl.Float64))
+            .alias("embedding")
+        ).drop("embedding_str")
+        
+        return df
     except Exception as e:
-        st.error(f"Data not found or error loading data: {e}")
+        st.error(f"Data not found or error loading data. Ensure `load_to_postgres` asset has been run. Error: {e}")
         st.stop()
 
 @st.cache_data
 def load_chembl_data() -> pl.DataFrame:
-    """Loads ChEMBL activity data from a Parquet file."""
+    """Loads ChEMBL activity data from Postgres."""
     try:
-        df = pl.read_parquet(DATA_PATH_CHEMBL)
+        engine = create_engine(get_db_connection_string())
+        df = pl.read_database("SELECT * FROM chembl_activities", engine)
         if df.is_empty():
             st.warning("ChEMBL data is empty. Drug candidate search will be unavailable.")
         return df
     except Exception:
-        st.warning("ChEMBL data not found. Please run the `chembl_activity_parquet` asset. Drug candidate search will be unavailable.")
+        st.warning("ChEMBL data not found. Please run the `load_to_postgres` asset. Drug candidate search will be unavailable.")
         return pl.DataFrame()
 
 def fetch_pdb_data(uniprot_id: str) -> Optional[str]:
@@ -102,43 +123,29 @@ def create_3d_view(pdb_data: str, width: str = "100%", height: int = 400) -> py3
 
 def find_similar_targets(df: pl.DataFrame, selected_id: str, top_n: int = 5) -> pl.DataFrame:
     """
-    Finds the most similar targets to a selected protein based on cosine similarity of their embeddings.
-
-    Args:
-        df (pl.DataFrame): The DataFrame with embeddings.
-        selected_id (str): The UniProt ID of the protein to compare against.
-        top_n (int): The number of similar targets to return.
-
-    Returns:
-        pl.DataFrame: A DataFrame of the top N similar targets and their similarity scores.
+    Finds the most similar targets to a selected protein using Postgres pgvector cosine distance.
     """
-    # 1. Get the embedding for the selected target.
-    target_embedding = df.filter(pl.col("uniprot_id") == selected_id)["embedding"][0]
-
-    # 2. Calculate cosine similarity using pure Polars expressions for performance.
-    # Cosine Similarity = (A · B) / (||A|| * ||B||)
+    engine = create_engine(get_db_connection_string())
     
-    # A · B (dot product)
-    dot_product = pl.col("embedding").list.eval(
-        pl.element() * pl.lit(pl.Series(target_embedding))
-    ).list.sum()
-
-    # ||A|| (L2 norm of target)
-    norm_target = np.linalg.norm(np.array(target_embedding))
-
-    # ||B|| (L2 norm of other vectors in the column)
-    norm_other = pl.col("embedding").list.eval(
-        pl.element().pow(2)
-    ).list.sum().sqrt()
-
-    similarity_expr = (dot_product / (pl.lit(norm_target) * norm_other)).alias("similarity")
-
-    # 3. Apply expression, sort, filter out the original protein, and take the top N.
-    return df.with_columns(
-        similarity_expr
-    ).sort("similarity", descending=True).filter(
-        pl.col("uniprot_id") != selected_id
-    ).head(top_n)
+    query = text(f"""
+        SELECT 
+            k.uniprot_id, 
+            k.protein_name, 
+            k.gene_name,
+            -- pgvector <=> operator computes cosine distance. 
+            -- Cosine similarity is 1 - Cosine distance.
+            1 - (e.embedding <=> (SELECT embedding FROM embeddings WHERE uniprot_id = :selected_id)) AS similarity
+        FROM kinases k
+        JOIN embeddings e ON k.uniprot_id = e.uniprot_id
+        WHERE k.uniprot_id != :selected_id
+        ORDER BY similarity DESC
+        LIMIT :top_n
+    """)
+    
+    with engine.connect() as conn:
+        result = pl.read_database(query, conn, execute_options={"parameters": {"selected_id": selected_id, "top_n": top_n}})
+        
+    return result
 
 def render_target_selection(df: pl.DataFrame) -> None:
     """
