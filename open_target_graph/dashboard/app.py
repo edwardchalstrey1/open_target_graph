@@ -222,6 +222,12 @@ def render_drug_candidates(chembl_df: pl.DataFrame, similar_targets_df: pl.DataF
         """
     Based on protein embedding similarity, we can infer that drugs targeting similar proteins might also be effective. 
     This table shows known bioactive molecules for your selected target and its closest neighbors in the embedding space.
+
+    * **Candidate Type**: Whether the drug was found for the "Direct Target" or "Inferred from Neighbor".
+    * **Molecule Name**: The ChEMBL preferred name for the bioactive molecule.
+    * **pChEMBL**: A standardized measure of a drug's potency (higher is more potent).
+    * **standard_type**: The activity type (e.g., IC50, Ki, Kd) the measurement is based on.
+    * **Source Target**: Which neighboring protein the drug originally targets (if inferred).
     """
     )
 
