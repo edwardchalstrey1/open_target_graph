@@ -1,27 +1,46 @@
 import polars as pl
 import requests
 from dagster import asset, AssetIn, AssetExecutionContext
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 CHEMBL_API_URL = "https://www.ebi.ac.uk/chembl/api/data"
 
-def fetch_activities_for_accession(accession: str) -> List[Dict[str, Any]]:
-    """Fetches all activities for a given UniProt accession with pagination."""
+def get_target_chembl_id(accession: str, logger: Any = None) -> Optional[str]:
+    """
+    Fetches the target ChEMBL ID for a given UniProt accession.
+    This is more robust than using a deep filter on the activity endpoint.
+    """
+    url = f"{CHEMBL_API_URL}/target/search.json?q={accession}"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        if data.get("targets"):
+            # The first result is usually the correct one for a specific accession
+            return data["targets"][0].get("target_chembl_id")
+    except requests.exceptions.RequestException as e:
+        if logger:
+            logger.warning(f"Could not fetch ChEMBL ID for accession {accession}. Error: {e}. Skipping.")
+    return None
+
+def fetch_activities_for_chembl_id(chembl_id: str) -> List[Dict[str, Any]]:
+    """Fetches all activities for a given ChEMBL ID with pagination."""
     # We filter for a pChEMBL value to get quantitative data
     # and for assays with high confidence to ensure data quality.
     url = (
-        f"{CHEMBL_API_URL}/activity.json?target_chembl_id__target_components__accession={accession}"
+        f"{CHEMBL_API_URL}/activity.json?target_chembl_id={chembl_id}"
         "&pchembl_value__isnull=false&assay_confidence_score__gte=5"
     )
     
     activities = []
     while url:
-        response = requests.get(url)
+        response = requests.get(url, timeout=15)
         response.raise_for_status()
         data = response.json()
         activities.extend(data["activities"])
         # Follow the pagination link if it exists
         if data["page_meta"]["next"]:
+            # The 'next' URL is relative, so we need to prepend the base
             url = f"https://www.ebi.ac.uk{data['page_meta']['next']}"
         else:
             url = None
@@ -38,7 +57,7 @@ def fetch_molecule_details(molecule_ids: List[str], logger: Any = None) -> Dict[
         url = f"{CHEMBL_API_URL}/molecule.json?molecule_chembl_id__in={ids_str}&only=molecule_chembl_id,pref_name,molecule_structures"
         
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=15)
             response.raise_for_status()
             data = response.json()
         except requests.exceptions.HTTPError as e:
@@ -71,8 +90,12 @@ def chembl_activity_parquet(context: AssetExecutionContext, uniprot_parquet: str
     context.log.info(f"Fetching ChEMBL activities for {len(kinase_ids)} kinases...")
     
     for i, uniprot_id in enumerate(kinase_ids):
+        target_chembl_id = get_target_chembl_id(uniprot_id, logger=context.log)
+        if not target_chembl_id:
+            continue # Skip if we couldn't find a mapping to a ChEMBL ID
+
         try:
-            activities = fetch_activities_for_accession(uniprot_id)
+            activities = fetch_activities_for_chembl_id(target_chembl_id)
             for act in activities:
                 all_activities.append({
                     "uniprot_id": uniprot_id,
@@ -81,7 +104,7 @@ def chembl_activity_parquet(context: AssetExecutionContext, uniprot_parquet: str
                     "standard_type": act.get("standard_type"),
                 })
         except requests.exceptions.HTTPError as e:
-            context.log.warning(f"Failed to fetch ChEMBL activities for UniProt ID {uniprot_id}. Status: {e.response.status_code}. Skipping.")
+            context.log.warning(f"Failed to fetch activities for ChEMBL ID {target_chembl_id} (from UniProt {uniprot_id}). Status: {e.response.status_code}. Skipping.")
             continue # Move to the next kinase
         if (i + 1) % 10 == 0:
             context.log.info(f"Processed {i+1}/{len(kinase_ids)} kinases...")
