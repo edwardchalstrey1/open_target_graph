@@ -82,7 +82,7 @@ def fetch_pdb_data(uniprot_id: str) -> Optional[str]:
         return None
     return None
 
-def create_3d_view(pdb_data: str, width: int = 400, height: int = 300) -> py3Dmol.view:
+def create_3d_view(pdb_data: str, width: str = "100%", height: int = 400) -> py3Dmol.view:
     """
     Creates a py3Dmol view object for a given PDB string.
 
@@ -182,13 +182,13 @@ def render_structure_preview(selected_id: str) -> None:
     pdb_data = fetch_pdb_data(selected_id)
     
     if pdb_data:
-        view = create_3d_view(pdb_data)
-        showmol(view, height=300, width=400)
+        view = create_3d_view(pdb_data, width="100%", height=500)
+        showmol(view, width=None, height=500)
     else:
         st.warning(f"Structure not found for {selected_id}")
         # Show empty viewer to maintain layout
-        view = py3Dmol.view(width=400, height=300)
-        showmol(view, height=300, width=400)
+        view = py3Dmol.view(width="100%", height=500)
+        showmol(view, width=None, height=500)
 
 def render_similarity_search(df: pl.DataFrame, selected_id: str) -> pl.DataFrame:
     """
