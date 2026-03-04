@@ -1,9 +1,9 @@
 from dagster import Definitions, load_assets_from_modules
-from open_target_graph.assets.ingestion import uniprot
+from open_target_graph.assets.ingestion import uniprot, chembl
 from open_target_graph.assets.modeling import inference
 
 
-ingestion_assets = load_assets_from_modules([uniprot])
+ingestion_assets = load_assets_from_modules([uniprot, chembl])
 modeling_assets = load_assets_from_modules([inference])
 
 defs = Definitions(
