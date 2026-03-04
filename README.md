@@ -12,6 +12,8 @@ It demonstrates a modern **TechBio stack**, combining robust data engineering (P
 ## 🚀 High-Level Overview
 
 This platform answers the question: *Which drug targets are structurally similar to known kinase inhibitors, based on deep learning embeddings rather than just sequence alignment?*
+- Investigated targets: Known kinase inhibitors from UniProt.
+- Investigated drugs: Bioactive molecules from ChEMBL.
 
 1.  **Data Ingestion**: Automates the retrieval of high-value drug targets (e.g., Kinases) from **UniProt** and bioactive small molecules from **ChEMBL**.
 2.  **AI Analysis**: Generates high-dimensional vector embeddings for protein sequences using Meta AI's **ESM-2 (Evolutionary Scale Modeling)** transformer.
