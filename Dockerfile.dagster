@@ -27,4 +27,4 @@ RUN uv pip install --system -e ".[dev]"
 # Expose Webserver
 EXPOSE 3000
 
-CMD ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000", "-m", "open_target_graph.definitions"]
+CMD ["dagster", "dev", "-h", "0.0.0.0", "-p", "3000", "-m", "open_target_graph.definitions"]
