@@ -11,6 +11,7 @@ from typing import Optional, List
 # Constants
 DATA_PATH_KINASES = "data/kinases.parquet"
 DATA_PATH_EMBEDDINGS = "data/embeddings.parquet"
+DATA_PATH_CHEMBL = "data/chembl_activity.parquet"
 ALPHAFOLD_API_URL = "https://alphafold.ebi.ac.uk/api/prediction/{}"
 
 def configure_page() -> None:
@@ -46,6 +47,18 @@ def load_data() -> pl.DataFrame:
     except Exception as e:
         st.error(f"Data not found or error loading data: {e}")
         st.stop()
+
+@st.cache_data
+def load_chembl_data() -> pl.DataFrame:
+    """Loads ChEMBL activity data from a Parquet file."""
+    try:
+        df = pl.read_parquet(DATA_PATH_CHEMBL)
+        if df.is_empty():
+            st.warning("ChEMBL data is empty. Drug candidate search will be unavailable.")
+        return df
+    except Exception:
+        st.warning("ChEMBL data not found. Please run the `chembl_activity_parquet` asset. Drug candidate search will be unavailable.")
+        return pl.DataFrame()
 
 def fetch_pdb_data(uniprot_id: str) -> Optional[str]:
     """
@@ -177,27 +190,65 @@ def render_structure_preview(selected_id: str) -> None:
         view = py3Dmol.view(width=400, height=300)
         showmol(view, height=300, width=400)
 
-def render_similarity_search(df: pl.DataFrame, selected_id: str) -> None:
+def render_similarity_search(df: pl.DataFrame, selected_id: str) -> pl.DataFrame:
     """
     Renders the UI for finding and displaying similar targets.
 
     Args:
         df (pl.DataFrame): The main dataframe.
         selected_id (str): The currently selected UniProt ID.
+
+    Returns:
+        pl.DataFrame: The dataframe containing top similar targets.
     """
-    st.subheader("Find Similar Targets")
+    st.subheader("3. Find Similar Targets & Drug Candidates")
     st.markdown("Find the most similar proteins in the high-dimensional embedding space using cosine similarity. This is more powerful than sequence alignment as it captures functional and structural relationships learned by the ESM-2 model.")
 
     similar_targets = find_similar_targets(df, selected_id, top_n=5)
     
     st.write("Most similar targets:")
     st.dataframe(
-        similar_targets.select(
-            "uniprot_id", "protein_name", "gene_name", "similarity"
-        ).to_pandas().style.format({"similarity": "{:.4f}"}),
+        similar_targets.select("uniprot_id", "protein_name", "gene_name", "similarity")
+        .to_pandas()
+        .style.format({"similarity": "{:.4f}"}),
         use_container_width=True,
         hide_index=True,
     )
+    return similar_targets
+
+def render_drug_candidates(chembl_df: pl.DataFrame, similar_targets_df: pl.DataFrame, selected_id: str) -> None:
+    """Renders a table of drug candidates for the selected target and its neighbors."""
+    st.markdown("#### Semantic Drug Candidate Search")
+    st.markdown(
+        """
+    Based on protein embedding similarity, we can infer that drugs targeting similar proteins might also be effective. 
+    This table shows known bioactive molecules for your selected target and its closest neighbors in the embedding space.
+    """
+    )
+
+    if chembl_df.is_empty():
+        return
+
+    neighbor_ids = similar_targets_df["uniprot_id"].to_list()
+    all_relevant_ids = [selected_id] + neighbor_ids
+
+    candidate_drugs = chembl_df.filter(pl.col("uniprot_id").is_in(all_relevant_ids)).sort("pchembl_value", descending=True)
+
+    if candidate_drugs.is_empty():
+        st.info("No known bioactive molecules found in ChEMBL for the selected target or its neighbors.")
+        return
+
+    candidate_drugs = candidate_drugs.with_columns(
+        pl.when(pl.col("uniprot_id") == selected_id).then(pl.lit("Direct Target")).otherwise(pl.lit("Inferred from Neighbor")).alias("Candidate Type")
+    ).with_columns(
+        pl.when(pl.col("Candidate Type") == "Inferred from Neighbor").then(pl.col("uniprot_id")).otherwise(None).alias("Source Target")
+    )
+
+    display_df = candidate_drugs.select(
+        ["Candidate Type", "pref_name", "pchembl_value", "standard_type", "Source Target"]
+    ).rename({"pref_name": "Molecule Name", "pchembl_value": "pChEMBL"})
+
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 @st.cache_data
 def compute_tsne_projection(embeddings: List[List[float]], perplexity: int = 30) -> np.ndarray:
@@ -280,7 +331,8 @@ def main() -> None:
     render_header()
     
     df = load_data()
-    st.success(f"Loaded {len(df)} targets with embeddings.")
+    chembl_df = load_chembl_data()
+    st.success(f"Loaded {len(df)} targets and {len(chembl_df)} activity records.")
 
     # Check if a selection was made from the plot in the previous run
     if "plot_selection" in st.session_state:
@@ -306,7 +358,9 @@ def main() -> None:
     
     col3, col4 = st.columns(2)
     with col3:
-        render_similarity_search(df, st.session_state.selected_id)
+        similar_targets_df = render_similarity_search(df, st.session_state.selected_id)
+        st.divider()
+        render_drug_candidates(chembl_df, similar_targets_df, st.session_state.selected_id)
     with col4:
         render_tsne_plot(df)
 
