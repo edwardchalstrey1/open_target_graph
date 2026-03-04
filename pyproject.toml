@@ -19,7 +19,11 @@ dependencies = [
     "scikit-learn",
     "plotly",
     "ipython_genutils",
-    "nbformat"
+    "nbformat",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "pgvector",
+    "adbc-driver-postgresql"
 ]
 
 [project.optional-dependencies]

@@ -1,0 +1,30 @@
+FROM python:3.10-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    DAGSTER_HOME=/opt/dagster/dagster_home
+
+RUN mkdir -p $DAGSTER_HOME && \
+    mkdir -p /opt/dagster/app
+
+WORKDIR /opt/dagster/app
+
+# Install system dependencies needed for compiling python packages (e.g. psycopg2)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for fast dependency resolution
+RUN pip install uv
+
+# Copy requirements and install
+COPY pyproject.toml /opt/dagster/app/
+COPY . /opt/dagster/app/
+RUN uv pip install --system -e ".[dev]"
+
+# Expose Webserver
+EXPOSE 3000
+
+CMD ["dagster", "dev", "-h", "0.0.0.0", "-p", "3000", "-m", "open_target_graph.definitions"]
