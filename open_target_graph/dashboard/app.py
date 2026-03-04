@@ -201,7 +201,7 @@ def render_similarity_search(df: pl.DataFrame, selected_id: str) -> pl.DataFrame
     Returns:
         pl.DataFrame: The dataframe containing top similar targets.
     """
-    st.subheader("3. Find Similar Targets & Drug Candidates")
+    st.subheader("Most Similar Targets")
     st.markdown("Find the most similar proteins in the high-dimensional embedding space using cosine similarity. This is more powerful than sequence alignment as it captures functional and structural relationships learned by the ESM-2 model.")
 
     similar_targets = find_similar_targets(df, selected_id, top_n=5)
@@ -218,7 +218,7 @@ def render_similarity_search(df: pl.DataFrame, selected_id: str) -> pl.DataFrame
 
 def render_drug_candidates(chembl_df: pl.DataFrame, similar_targets_df: pl.DataFrame, selected_id: str) -> None:
     """Renders a table of drug candidates for the selected target and its neighbors."""
-    st.markdown("#### Semantic Drug Candidate Search")
+    st.subheader("Semantic Drug Candidate Search")
     st.markdown(
         """
     Based on protein embedding similarity, we can infer that drugs targeting similar proteins might also be effective. 
