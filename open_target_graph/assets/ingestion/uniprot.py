@@ -16,7 +16,7 @@ def raw_uniprot_kinases(context: AssetExecutionContext) -> pl.DataFrame:
     """
     # UniProt API Query: Human (9606) AND Family:Kinase
     # TODO: Make this configurable
-    num_kinases = 10
+    num_kinases = 100
     url = f"https://rest.uniprot.org/uniprotkb/search?query=(taxonomy_id:9606)%20AND%20(family:kinase)&format=json&size={num_kinases}"
     
     context.log.info(f"Fetching data from: {url}")
