@@ -60,9 +60,9 @@ def fetch_molecule_details(molecule_ids: List[str], logger: Any = None) -> Dict[
             response = requests.get(url, timeout=15)
             response.raise_for_status()
             data = response.json()
-        except requests.exceptions.HTTPError as e:
+        except requests.exceptions.RequestException as e:
             if logger:
-                logger.warning(f"A batch of ChEMBL molecule details failed to fetch. Status: {e.response.status_code}. Skipping batch.")
+                logger.warning(f"A batch of ChEMBL molecule details failed to fetch. Error: {e}. Skipping batch.")
             continue
         
         for mol in data.get("molecules", []):
@@ -103,8 +103,8 @@ def chembl_activity_parquet(context: AssetExecutionContext, uniprot_parquet: str
                     "pchembl_value": float(act.get("pchembl_value")) if act.get("pchembl_value") else None,
                     "standard_type": act.get("standard_type"),
                 })
-        except requests.exceptions.HTTPError as e:
-            context.log.warning(f"Failed to fetch activities for ChEMBL ID {target_chembl_id} (from UniProt {uniprot_id}). Status: {e.response.status_code}. Skipping.")
+        except requests.exceptions.RequestException as e:
+            context.log.warning(f"Failed to fetch activities for ChEMBL ID {target_chembl_id} (from UniProt {uniprot_id}). Error: {e}. Skipping.")
             continue # Move to the next kinase
         if (i + 1) % 10 == 0:
             context.log.info(f"Processed {i+1}/{len(kinase_ids)} kinases...")
