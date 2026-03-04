@@ -34,7 +34,10 @@ This platform answers the question: *Which drug targets are structurally similar
 │   └── dashboard/          # Streamlit frontend application
 ├── infra/                  # Pulumi IaC definitions
 ├── data/                   # Local storage for Parquet files (gitignored)
-└── Dockerfile              # Multi-stage build for the platform
+├── docker-compose.yml      # Docker Compose file for local development
+├── Dockerfile.dagster      # Dockerfile for Dagster
+├── Dockerfile.streamlit    # Dockerfile for Streamlit
+└── pyproject.toml          # Python package and dependency management
 ```
 
 ## 🏗️ Architecture
@@ -63,16 +66,7 @@ graph TD
 
 # Developer documentation
 
-## 🛠️ Local Setup (Current Status)
-
-This section describes how to run the project in its current state, which consists of a local Dagster pipeline and a Streamlit dashboard.
-
-### Prerequisites
-
-*   Python 3.9+
-*   [uv](https://github.com/astral-sh/uv): A fast Python package installer and resolver, used for environment management.
-
-### 0. Hugging Face Authentication (Optional but Recommended)
+### (Optional) Hugging Face Authentication 
 
 The modeling pipeline downloads the `facebook/esm2...` model from the Hugging Face Hub. To avoid rate limits and enable faster downloads, you should use an access token.
 
@@ -84,6 +78,18 @@ The modeling pipeline downloads the `facebook/esm2...` model from the Hugging Fa
     HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
     ```
 5.  Ensure `.env` is added to your `.gitignore` file to avoid committing secrets.
+
+## 🛠️ Local Setup (Current Status)
+
+<details>
+
+<summary>Manual Setup</summary>
+
+
+### Prerequisites
+
+*   Python 3.9+
+*   [uv](https://github.com/astral-sh/uv): A fast Python package installer and resolver, used for environment management.
 
 ### 1. Installation
 
@@ -104,7 +110,7 @@ uv run dagster dev
 
 This will start the Dagster UI, typically at http://localhost:3000
 
-Navigate to the Dagster UI in your browser. Find and materialize the assets (`uniprot_parquet` and `protein_embeddings`). This will execute the pipeline, download the data from UniProt, generate embeddings, and save the results into the `data/` directory.
+Navigate to the Dagster UI in your browser. Materialize the assets. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and save the results into the `data/` directory.
 
 ### 3. Run the Dashboard (Streamlit)
 
@@ -114,7 +120,9 @@ Once the data assets from the pipeline exist in the `data/` folder, you can laun
 uv run streamlit run open_target_graph/dashboard/app.py
 ```
 
-The application will now be running and accessible, typically at `http://localhost:8501`.
+The application will now be running and accessible  at http://localhost:8501.
+
+</details>
 
 ## 🐳 Docker Setup
 
@@ -125,10 +133,18 @@ To run the entire application stack including Dagster, PostgreSQL (with `pgvecto
    ```bash
    docker compose up --build -d
    ```
-3. Open the Dagster UI at http://localhost:3000 and materialize the assets (including `load_to_postgres`).
+3. Open the Dagster UI at http://localhost:3000 and materialize the assets. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and save the results into the `data/` directory.
 4. Wait for the data ingestion to finish, then open Streamlit at http://localhost:8501.
 
+To stop the application, run the following command:
+
+```bash
+docker compose down
+```
+
 ## Testing
+
+See manual setup above.
 
 ```bash
 uv run pytest
