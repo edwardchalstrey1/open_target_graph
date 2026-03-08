@@ -23,7 +23,10 @@ dependencies = [
     "sqlalchemy",
     "psycopg2-binary",
     "pgvector",
-    "adbc-driver-postgresql"
+    "adbc-driver-postgresql",
+    "pydantic-ai",
+    "langgraph",
+    "google-generativeai"
 ]
 
 [project.optional-dependencies]

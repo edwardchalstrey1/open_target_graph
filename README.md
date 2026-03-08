@@ -21,6 +21,7 @@ This platform answers the question: *Which drug targets are structurally similar
 4.  **Visualization**: A **Streamlit** dashboard that offers:
     *   3D Protein Structure rendering (via Py3Dmol).
     *   An "Embedding Space" t-SNE projection to find novel clusters of similar targets.
+    *   **Autonomous Research Assistant**: Deep-dive literature analysis via PubMed and LLM-driven research reports.
     *   **Semantic search for drug candidates** based on protein similarity.
 
 📦 Project Structure
@@ -61,6 +62,8 @@ graph TD
         D --> G[(PostgreSQL)]
         F --> G
         G -.->|pgvector| H[Streamlit App]
+        H --> I[PubMed API]
+        H --> J[Gemini AI]
     end
 ```
 
@@ -78,6 +81,18 @@ The modeling pipeline downloads the `facebook/esm2...` model from the Hugging Fa
     HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
     ```
 5.  Ensure `.env` is added to your `.gitignore` file to avoid committing secrets.
+
+### (Optional) Gemini API Key
+
+The dashboard uses the Gemini API for the research assistant. To use this feature, you need a Gemini API key.
+
+1.  Create a free account on [Google AI Studio](https://aistudio.google.com/).
+2.  Go to **Get API Key** and create a new API key.
+3.  Add your API key to the `.env` file.
+    ```
+    GEMINI_API_KEY=your_gemini_api_key
+    ```
+4.  Ensure `.env` is added to your `.gitignore` file to avoid committing secrets.
 
 ## 🛠️ Local Setup (Current Status)
 

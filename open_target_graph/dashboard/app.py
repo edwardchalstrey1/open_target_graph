@@ -8,7 +8,8 @@ import py3Dmol
 import requests
 import os
 from sqlalchemy import create_engine, text
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
+from open_target_graph.agents.workflow import research_app
 
 # Constants
 ALPHAFOLD_API_URL = "https://alphafold.ebi.ac.uk/api/prediction/{}"
@@ -262,6 +263,75 @@ def render_drug_candidates(chembl_df: pl.DataFrame, similar_targets_df: pl.DataF
 
     st.dataframe(display_df, use_container_width=True, hide_index=True)
 
+def render_ai_research_assistant(uniprot_id: str, protein_name: str) -> None:
+    """Renders the AI Research Assistant section."""
+    st.divider()
+    st.subheader("🤖 Autonomous Research Assistant")
+    st.markdown(f"Generate a deep-dive research report for **{protein_name}** using Pydantic AI and PubMed.")
+    
+    if "research_report" not in st.session_state:
+        st.session_state.research_report = None
+
+    if st.button("🚀 Generate AI Research Report", type="primary"):
+        if not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")):
+            st.error("Please set your `GEMINI_API_KEY` or `GOOGLE_API_KEY` environment variable to use the AI Research Assistant.")
+            return
+            
+        with st.status("Analyzing target and searching PubMed...", expanded=True) as status:
+            st.write("Initializing agent workflow...")
+            inputs = {
+                "uniprot_id": uniprot_id,
+                "protein_name": protein_name,
+                "query": f"{protein_name} drug discovery",
+                "raw_papers": [],
+                "final_report": {},
+                "error": ""
+            }
+            
+            try:
+                result = research_app.invoke(inputs)
+                if result.get("error"):
+                    st.error(result["error"])
+                else:
+                    st.session_state.research_report = result["final_report"]
+                    status.update(label="Report Generated!", state="complete", expanded=False)
+            except Exception as e:
+                st.error(f"Workflow execution failed: {e}")
+
+    if st.session_state.research_report:
+        report = st.session_state.research_report
+        
+        # Display Report
+        st.info(f"Report Generated at: {report.get('generated_at')}")
+        
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.markdown("### Mechanism Summary")
+            st.write(report.get("mechanism_summary"))
+            
+            st.markdown("### Key Scientific Papers")
+            for paper in report.get("top_papers", []):
+                with st.expander(f"📄 {paper.get('title')} ({paper.get('year')})"):
+                    st.write(f"**Authors:** {', '.join(paper.get('authors', []))}")
+                    st.write(f"**Key Findings:**")
+                    for finding in paper.get("key_findings", []):
+                        st.write(f"- {finding}")
+                    st.markdown(f"[View on PubMed](https://pubmed.ncbi.nlm.nih.gov/{paper.get('pubmed_id')}/)")
+                    st.metric("Relevance", f"{paper.get('relevance_score')}/10")
+        
+        with col2:
+            st.markdown("### Recommendation")
+            rec = report.get("recommendation", "N/A")
+            if "Go" in rec and "No-Go" not in rec:
+                st.success(rec)
+            elif "No-Go" in rec:
+                st.error(rec)
+            else:
+                st.warning(rec)
+                
+            st.markdown("### Clinical Status")
+            st.info(report.get("clinical_trial_status", "Unknown"))
+
 @st.cache_data
 def compute_tsne_projection(embeddings: List[List[float]], perplexity: int = 30) -> np.ndarray:
     """
@@ -374,6 +444,10 @@ def main() -> None:
         render_tsne_plot(df) 
     with col4:
         render_drug_candidates(chembl_df, similar_targets_df, st.session_state.selected_id)
+
+    # Render AI Assistant at the bottom
+    target_name = df.filter(pl.col('uniprot_id') == st.session_state.selected_id)['protein_name'][0]
+    render_ai_research_assistant(st.session_state.selected_id, target_name)
 
 if __name__ == "__main__":
     main()
