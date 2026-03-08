@@ -337,13 +337,14 @@ def test_render_tsne_plot(mocker):
 def test_main_function(mocker):
     mock_configure = mocker.patch("open_target_graph.dashboard.app.configure_page")
     mock_header = mocker.patch("open_target_graph.dashboard.app.render_header")
-    mock_load_data = mocker.patch("open_target_graph.dashboard.app.load_data", return_value=pl.DataFrame({"uniprot_id": ["A"]}))
+    mock_load_data = mocker.patch("open_target_graph.dashboard.app.load_data", return_value=pl.DataFrame({"uniprot_id": ["A"], "protein_name": ["Protein A"]}))
     mock_load_chembl = mocker.patch("open_target_graph.dashboard.app.load_chembl_data", return_value=pl.DataFrame())
     mock_target_sel = mocker.patch("open_target_graph.dashboard.app.render_target_selection")
     mock_sim_search = mocker.patch("open_target_graph.dashboard.app.render_similarity_search", return_value=pl.DataFrame())
     mock_struct_prev = mocker.patch("open_target_graph.dashboard.app.render_structure_preview")
     mock_tsne = mocker.patch("open_target_graph.dashboard.app.render_tsne_plot")
     mock_drug_cand = mocker.patch("open_target_graph.dashboard.app.render_drug_candidates")
+    mock_ai_assistant = mocker.patch("open_target_graph.dashboard.app.render_ai_research_assistant")
     
     mock_st = mocker.patch("open_target_graph.dashboard.app.st")
     mock_st.session_state = MockSessionState({})
@@ -361,3 +362,4 @@ def test_main_function(mocker):
     mock_struct_prev.assert_called_once()
     mock_tsne.assert_called_once()
     mock_drug_cand.assert_called_once()
+    mock_ai_assistant.assert_called_once()
