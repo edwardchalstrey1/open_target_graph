@@ -26,7 +26,7 @@ dependencies = [
     "adbc-driver-postgresql",
     "pydantic-ai",
     "langgraph",
-    "google-generativeai"
+    "google-genai"
 ]
 
 [project.optional-dependencies]

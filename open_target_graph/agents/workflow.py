@@ -3,12 +3,16 @@ import requests
 from typing import TypedDict, List, Dict, Any
 from langgraph.graph import StateGraph, END
 from datetime import datetime
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from open_target_graph.agents.researcher import TargetReport, PaperSummary
 
-# Configure Gemini
-api_key = os.environ.get("GEMINI_API_KEY")
-genai.configure(api_key=api_key)
+def get_client():
+    """Returns a configured Gemini client."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY not found in environment.")
+    return genai.Client(api_key=api_key)
 
 # Define the "State" of our agent
 class AgentState(TypedDict):
@@ -77,7 +81,8 @@ def analyze_papers(state: AgentState) -> Dict[str, Any]:
     if state.get("error"):
         return {}
 
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    # Use the model name from state or default to a stable one
+    model_id = 'gemini-2.0-flash' # Using a safer model ID given user's previous attempt
     
     prompt = f"""
     Analyze the following papers for the target {state['protein_name']} ({state['uniprot_id']}):
@@ -106,20 +111,18 @@ def analyze_papers(state: AgentState) -> Dict[str, Any]:
     """
     
     try:
-        response = model.generate_content(prompt)
-        # In a real app, we'd use PydanticOutputParser or similar
-        # For simplicity, we assume the LLM returns valid JSON
-        import json
-        import re
+        client = get_client()
+        response = client.models.generate_content(
+            model=model_id,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type='application/json'
+            )
+        )
         
-        text = response.text
-        # Clean up possible markdown code blocks
-        match = re.search(r'\{.*\}', text, re.DOTALL)
-        if match:
-            report_data = json.loads(match.group())
-            return {"final_report": report_data}
-        else:
-            return {"error": "LLM failed to generate a valid JSON report."}
+        import json
+        report_data = json.loads(response.text)
+        return {"final_report": report_data}
             
     except Exception as e:
         return {"error": f"LLM error: {str(e)}"}
