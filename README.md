@@ -115,6 +115,12 @@ uv venv
 uv pip install -e ".[dev]"
 ```
 
+To update the dependencies:
+
+```bash
+uv sync
+```
+
 ### 2. Run the Data Pipeline (Dagster)
 
 The project uses Dagster to orchestrate data fetching and ML model inference. Run the following command to launch the Dagster UI:
@@ -137,6 +143,14 @@ uv run streamlit run open_target_graph/dashboard/app.py
 
 The application will now be running and accessible  at http://localhost:8501.
 
+### Testing
+
+See manual setup above.
+
+```bash
+uv run pytest
+```
+
 </details>
 
 ## 🐳 Docker Setup
@@ -157,10 +171,10 @@ To stop the application, run the following command:
 docker compose down
 ```
 
-## Testing
+### Testing
 
-See manual setup above.
+To run the tests in the Docker container:
 
 ```bash
-uv run pytest
+docker compose exec dagster uv run pytest
 ```
