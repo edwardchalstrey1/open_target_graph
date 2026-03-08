@@ -5,7 +5,7 @@ from langgraph.graph import StateGraph, END
 from datetime import datetime
 from google import genai
 from google.genai import types
-from open_target_graph.agents.researcher import TargetReport, PaperSummary
+from open_target_graph.agents.researcher import TargetReport, PaperSummary, SYSTEM_PROMPT
 
 def get_client():
     """Returns a configured Gemini client."""
@@ -116,6 +116,7 @@ def analyze_papers(state: AgentState) -> Dict[str, Any]:
             model=model_id,
             contents=prompt,
             config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
                 response_mime_type='application/json'
             )
         )
