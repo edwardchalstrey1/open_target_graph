@@ -269,6 +269,13 @@ def render_ai_research_assistant(uniprot_id: str, protein_name: str) -> None:
     st.subheader("🤖 Autonomous Research Assistant")
     st.markdown(f"Generate a deep-dive research report for **{protein_name}** using Pydantic AI and PubMed.")
     
+    # Model Selection
+    model_options = [
+        "gemini-flash-latest",
+        "gemini-pro-latest",
+    ]
+    selected_model = st.selectbox("Select Gemini Model:", model_options, index=1)
+
     if "research_report" not in st.session_state:
         st.session_state.research_report = None
 
@@ -282,6 +289,7 @@ def render_ai_research_assistant(uniprot_id: str, protein_name: str) -> None:
             inputs = {
                 "uniprot_id": uniprot_id,
                 "protein_name": protein_name,
+                "model_id": selected_model,
                 "query": f"{protein_name} drug discovery",
                 "raw_papers": [],
                 "final_report": {},

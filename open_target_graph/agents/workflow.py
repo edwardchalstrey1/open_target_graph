@@ -18,6 +18,7 @@ def get_client():
 class AgentState(TypedDict):
     uniprot_id: str
     protein_name: str
+    model_id: str
     query: str
     raw_papers: List[Dict[str, Any]]
     final_report: Dict[str, Any]
@@ -81,8 +82,7 @@ def analyze_papers(state: AgentState) -> Dict[str, Any]:
     if state.get("error"):
         return {}
 
-    # Use the model name from state or default to a stable one
-    model_id = 'gemini-2.0-flash' # Using a safer model ID given user's previous attempt
+    model_id = state.get("model_id", "gemini-flash-latest")
     
     prompt = f"""
     Analyze the following papers for the target {state['protein_name']} ({state['uniprot_id']}):
