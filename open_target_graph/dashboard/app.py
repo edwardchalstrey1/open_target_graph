@@ -164,12 +164,16 @@ def render_target_selection(df: pl.DataFrame) -> None:
         name = df.filter(pl.col('uniprot_id') == uid)['protein_name'][0]
         return f"{uid} - {name}"
 
+    def on_target_change():
+        st.session_state.research_report = None
+
     # Use a key to link this widget to the session state
     st.selectbox(
         "Choose a protein:", 
         options,
         format_func=format_func,
-        key="selected_id"
+        key="selected_id",
+        on_change=on_target_change
     )
     
     # Get details
@@ -428,6 +432,8 @@ def main() -> None:
     if "plot_selection" in st.session_state:
         # Update the primary selection key
         st.session_state.selected_id = st.session_state.plot_selection
+        # Reset research report on selection change
+        st.session_state.research_report = None
         # Clean up the temporary key
         del st.session_state.plot_selection
 
