@@ -32,6 +32,9 @@ This platform answers the question: *Which drug targets are structurally similar
 │   ├── assets/             # Dagster Software-Defined Assets
 │   │   ├── ingestion/      # ETL logic for UniProt/ChEMBL
 │   │   └── modeling/       # PyTorch inference logic
+│   ├── agents/             # Agentic logic
+│   │   ├── researcher.py   # The Pydantic AI definition
+│   │   └── workflow.py     # The LangGraph state machine
 │   └── dashboard/          # Streamlit frontend application
 ├── infra/                  # Pulumi IaC definitions
 ├── data/                   # Local storage for Parquet files (gitignored)
