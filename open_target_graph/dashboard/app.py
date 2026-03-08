@@ -273,8 +273,8 @@ def render_ai_research_assistant(uniprot_id: str, protein_name: str) -> None:
         st.session_state.research_report = None
 
     if st.button("🚀 Generate AI Research Report", type="primary"):
-        if not (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")):
-            st.error("Please set your `GEMINI_API_KEY` or `GOOGLE_API_KEY` environment variable to use the AI Research Assistant.")
+        if not os.environ.get("GEMINI_API_KEY"):
+            st.error("Please set your `GEMINI_API_KEY` environment variable to use the AI Research Assistant.")
             return
             
         with st.status("Analyzing target and searching PubMed...", expanded=True) as status:

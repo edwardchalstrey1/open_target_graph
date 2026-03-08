@@ -7,7 +7,7 @@ import google.generativeai as genai
 from open_target_graph.agents.researcher import TargetReport, PaperSummary
 
 # Configure Gemini
-api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+api_key = os.environ.get("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
 
 # Define the "State" of our agent
@@ -77,7 +77,7 @@ def analyze_papers(state: AgentState) -> Dict[str, Any]:
     if state.get("error"):
         return {}
 
-    model = genai.GenerativeModel('gemini-3-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
     
     prompt = f"""
     Analyze the following papers for the target {state['protein_name']} ({state['uniprot_id']}):
