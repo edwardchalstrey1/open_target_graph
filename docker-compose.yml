@@ -32,6 +32,7 @@ services:
       - "3000:3000"
     volumes:
       - .:/opt/dagster/app
+      - /opt/dagster/app/.venv
     depends_on:
       postgres:
         condition: service_healthy
@@ -47,10 +48,12 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: open_target_graph
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
       - "8501:8501"
     volumes:
       - .:/app
+      - /app/.venv
     depends_on:
       postgres:
         condition: service_healthy

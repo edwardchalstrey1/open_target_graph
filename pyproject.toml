@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "AI-Driven Drug Discovery Platform using Dagster and Polars"
 authors = [{name = "Ed Chalstrey", email = "edwardchalstrey@gmail.com"}]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.14"
 dependencies = [
     "dagster",
     "dagster-cloud",
@@ -23,7 +23,9 @@ dependencies = [
     "sqlalchemy",
     "psycopg2-binary",
     "pgvector",
-    "adbc-driver-postgresql"
+    "adbc-driver-postgresql",
+    "langgraph",
+    "google-genai"
 ]
 
 [project.optional-dependencies]
