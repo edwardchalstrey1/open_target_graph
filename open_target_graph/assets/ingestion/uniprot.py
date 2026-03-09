@@ -1,23 +1,25 @@
 import polars as pl
 import requests
-from dagster import asset, AssetExecutionContext
+from dagster import asset, AssetExecutionContext, Config
+
+class UniprotConfig(Config):
+    num_kinases: int = 100
 
 @asset(
     group_name="ingestion",
     description="Fetches Human Kinase proteins from UniProt API and converts to Polars DataFrame"
 )
-def raw_uniprot_kinases(context: AssetExecutionContext) -> pl.DataFrame:
+def raw_uniprot_kinases(context: AssetExecutionContext, config: UniprotConfig) -> pl.DataFrame:
     """
     This asset fetches human kinase protein data from the UniProt API, parses the relevant fields, and returns a Polars DataFrame.
     Args:
         context: The Dagster AssetExecutionContext for logging and asset management.
+        config: Configuration for the asset, including the number of kinases to fetch.
     Returns:
         pl.DataFrame: A DataFrame containing UniProt IDs, protein names, gene names, sequences, and sequence lengths for human kinase proteins.
     """
     # UniProt API Query: Human (9606) AND Family:Kinase
-    # TODO: Make this configurable
-    num_kinases = 100
-    url = f"https://rest.uniprot.org/uniprotkb/search?query=(taxonomy_id:9606)%20AND%20(family:kinase)&format=json&size={num_kinases}"
+    url = f"https://rest.uniprot.org/uniprotkb/search?query=(taxonomy_id:9606)%20AND%20(family:kinase)&format=json&size={config.num_kinases}"
     
     context.log.info(f"Fetching data from: {url}")
     response = requests.get(url)

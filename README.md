@@ -97,11 +97,11 @@ The dashboard uses the Gemini API for the research assistant. To use this featur
     ```
 4.  Ensure `.env` is added to your `.gitignore` file to avoid committing secrets.
 
-## 🛠️ Local Setup (Current Status)
+## 🛠️ Local Setup
 
 <details>
 
-<summary>Manual Setup</summary>
+<summary>Local Setup</summary>
 
 
 ### Prerequisites
@@ -134,7 +134,14 @@ uv run dagster dev
 
 This will start the Dagster UI, typically at http://localhost:3000
 
-Navigate to the Dagster UI in your browser. Materialize the assets. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and save the results into the `data/` directory.
+Navigate to the Dagster UI in your browser and click on **Lineages**. To configure the number of kinases fetched:
+1. Select the `raw_uniprot_kinases` asset.
+2. Click the dropdown arrow next to **Materialize all** and select **Launchpad**.
+3. In the configuration editor, specify the `num_kinases`.
+4. Click **Materialize selected** to materialize the first asset.
+5. Click off the `raw_uniprot_kinases` asset and click the dropdown arrow again and choose **Materialize unsynced** to materialize the remaining assets.
+
+Alternatively, you can simply click **Materialize all** to use the default of 100. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and save the results into the `data/` directory.
 
 ### 3. Run the Dashboard (Streamlit)
 
@@ -165,8 +172,19 @@ To run the entire application stack including Dagster, PostgreSQL (with `pgvecto
    ```bash
    docker compose up --build -d
    ```
-3. Open the Dagster UI at http://localhost:3000 and materialize the assets. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and save the results into the `data/` directory.
-4. Wait for the data ingestion to finish, then open Streamlit at http://localhost:8501.
+
+### Materialize the data assets in Dagster
+
+Navigate to the Dagster UI in your browser and click on **Lineages**. To configure the number of kinases fetched:
+1. Select the `raw_uniprot_kinases` asset.
+2. Click the dropdown arrow next to **Materialize all** and select **Launchpad**.
+3. In the configuration editor, specify the `num_kinases`.
+4. Click **Materialize selected** to materialize the first asset.
+5. Click off the `raw_uniprot_kinases` asset and click the dropdown arrow again and choose **Materialize unsynced** to materialize the remaining assets.
+
+Alternatively, you can simply click **Materialize all** to use the default of 100. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and save the results into the `data/` directory.
+
+Wait for the data ingestion to finish, then open the Streamlit GUI at http://localhost:8501.
 
 To stop the application, run the following command:
 
