@@ -46,7 +46,7 @@ This platform answers the question: *Which drug targets are structurally similar
 
 ## 🏗️ Architecture
 
-The system follows a microservice-inspired architecture, orchestrated by Dagster and deployed on Kubernetes.
+The system follows a microservice-inspired architecture, orchestrated by Dagster. While a Pulumi-based IaC deployment to **Kubernetes** is planned, the current implementation is focused on local execution and Docker Compose.
 
 ```mermaid
 graph TD
