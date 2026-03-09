@@ -199,3 +199,71 @@ To run the tests in the Docker container:
 ```bash
 docker compose exec dagster uv run pytest
 ```
+
+## ☸️ Kubernetes Setup (Local with Kind)
+
+For production-like local testing, you can deploy the stack to a Kubernetes cluster using [Pulumi](https://www.pulumi.com/).
+
+### Prerequisites
+
+*   [Kind](https://kind.sigs.k8s.io/) installed.
+*   [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/) installed.
+*   [kubectl](https://kubernetes.io/docs/tasks/tools/) installed.
+
+### 1. Create a Local Cluster
+
+```bash
+kind create cluster --name open-target-graph
+```
+
+### 2. Build and Load Images
+
+Since we are running locally, we need to load our Docker images into the Kind cluster nodes:
+
+```bash
+docker build -t open-target-graph-dagster -f Dockerfile.dagster .
+docker build -t open-target-graph-streamlit -f Dockerfile.streamlit .
+
+kind load docker-image open-target-graph-dagster --name open-target-graph
+kind load docker-image open-target-graph-streamlit --name open-target-graph
+```
+
+### 3. Deploy with Pulumi
+
+Initialize the environment and deploy:
+
+```bash
+cd infra
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+
+# Create a secret for development (replace with your key)
+kubectl create secret generic api-secrets --from-literal=GEMINI_API_KEY=your_actual_key_here
+
+pulumi up
+```
+
+### 4. Access the Services
+
+Use port-forwarding to access the UI:
+
+```bash
+# Dagster UI
+kubectl port-forward svc/dagster 3000:3000
+
+# Streamlit Dashboard
+kubectl port-forward svc/streamlit 8501:8501
+```
+
+<details>
+
+<summary> TODO: Cloud Considerations</summary>
+
+To run this in the cloud (GKE, EKS, etc.):
+1.  **Registry Credentials**: You'll need to create a `kubernetes.io/dockerconfigjson` secret so the cluster can pull from your private Docker Hub repo.
+2.  **Load Balancer**: Change the `Service` type from `ClusterIP` (default) to `LoadBalancer` in `infra/__main__.py` to get a public IP.
+3.  **Persistent Storage**: For the Postgres database, you'll need to define a `PersistentVolumeClaim` (PVC) backed by cloud storage (like EBS or GCE PD).
+4.  **Managed Postgres**: In a real production environment, it is highly recommended to use a managed service like AWS RDS or Google Cloud SQL instead of running Postgres inside Kubernetes.
+
+</details>

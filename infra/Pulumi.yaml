@@ -1,0 +1,3 @@
+name: open-target-graph-infra
+runtime: python
+description: Kubernetes infrastructure for Open Target Graph
