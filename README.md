@@ -33,7 +33,7 @@ This platform answers the question: *Which drug targets are structurally similar
 │   │   ├── ingestion/      # ETL logic for UniProt/ChEMBL
 │   │   └── modeling/       # PyTorch inference logic
 │   ├── agents/             # Agentic logic
-│   │   ├── researcher.py   # The Pydantic AI definition
+│   │   ├── researcher.py   # The Pydantic output schema and LLM system prompt
 │   │   └── workflow.py     # The LangGraph state machine
 │   └── dashboard/          # Streamlit frontend application
 ├── infra/                  # Pulumi IaC definitions
