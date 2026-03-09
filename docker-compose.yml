@@ -17,10 +17,8 @@ services:
       retries: 5
 
   dagster:
-    build:
-      context: .
-      dockerfile: Dockerfile.dagster
-    container_name: open_target_graph_dagster
+    image: edchalstrey/open_target_graph-dagster:latest
+    container_name: edchalstrey/open_target_graph-dagster:latest
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
       DB_USER: admin
@@ -38,6 +36,7 @@ services:
         condition: service_healthy
 
   streamlit:
+    image: edchalstrey/open_target_graph-streamlit:latest
     build:
       context: .
       dockerfile: Dockerfile.streamlit

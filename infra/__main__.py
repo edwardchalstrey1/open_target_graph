@@ -65,7 +65,7 @@ dagster_deployment = Deployment(
                 containers=[
                     ContainerArgs(
                         name="dagster",
-                        image="edchalstrey/open-target-graph-dagster:latest",  # Placeholder
+                        image="edchalstrey/open_target_graph-dagster:latest",
                         ports=[{"container_port": 3000}],
                         env=[
                             EnvVarArgs(name="DAGSTER_HOME", value="/opt/dagster/dagster_home"),
@@ -104,7 +104,7 @@ streamlit_deployment = Deployment(
                 containers=[
                     ContainerArgs(
                         name="streamlit",
-                        image="edchalstrey/open-target-graph-streamlit:latest",  # Placeholder
+                        image="edchalstrey/open_target_graph-streamlit:latest",
                         ports=[{"container_port": 8501}],
                         env=[
                             EnvVarArgs(name="DB_USER", value="admin"),

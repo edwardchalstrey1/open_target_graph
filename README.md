@@ -168,9 +168,9 @@ uv run pytest
 To run the entire application stack including Dagster, PostgreSQL (with `pgvector`), and the Streamlit dashboard all at once:
 
 1. Ensure Docker is installed and running.
-2. Run the following command from the project root:
+2. Run the following command from the project root. By default, this will pull pre-built images from Docker Hub. To build locally, use the `--build` flag:
    ```bash
-   docker compose up --build -d
+   docker compose up -d
    ```
 
 ### Materialize the data assets in Dagster
@@ -204,6 +204,10 @@ docker compose exec dagster uv run pytest
 
 For production-like local testing, you can deploy the stack to a Kubernetes cluster using [Pulumi](https://www.pulumi.com/).
 
+We'll use Docker images that are already built and available on Docker Hub.
+- `edchalstrey/open_target_graph-dagster:latest`
+- `edchalstrey/open_target_graph-streamlit:latest`
+
 ### Prerequisites
 
 *   [Kind](https://kind.sigs.k8s.io/) installed.
@@ -216,19 +220,7 @@ For production-like local testing, you can deploy the stack to a Kubernetes clus
 kind create cluster --name open-target-graph
 ```
 
-### 2. Build and Load Images
-
-Since we are running locally, we need to load our Docker images into the Kind cluster nodes:
-
-```bash
-docker build -t open-target-graph-dagster -f Dockerfile.dagster .
-docker build -t open-target-graph-streamlit -f Dockerfile.streamlit .
-
-kind load docker-image open-target-graph-dagster --name open-target-graph
-kind load docker-image open-target-graph-streamlit --name open-target-graph
-```
-
-### 3. Deploy with Pulumi
+### 2. Deploy with Pulumi
 
 Initialize the environment and deploy:
 
@@ -244,7 +236,7 @@ kubectl create secret generic api-secrets --from-literal=GEMINI_API_KEY=your_act
 pulumi up
 ```
 
-### 4. Access the Services
+### 3. Access the Services
 
 Use port-forwarding to access the UI:
 
