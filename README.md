@@ -168,9 +168,9 @@ uv run pytest
 To run the entire application stack including Dagster, PostgreSQL (with `pgvector`), and the Streamlit dashboard all at once:
 
 1. Ensure Docker is installed and running.
-2. Run the following command from the project root:
+2. Run the following command from the project root. By default, this will pull pre-built images from Docker Hub. To build locally, use the `--build` flag:
    ```bash
-   docker compose up --build -d
+   docker compose up -d
    ```
 
 ### Materialize the data assets in Dagster
