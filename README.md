@@ -10,6 +10,8 @@
 
 It demonstrates a modern **TechBio stack**, combining robust data engineering (Polars/Parquet), scalable orchestration (Dagster), and AI-driven structural biology (ESM-2 Embeddings) to bridge the gap between raw genomic data and actionable therapeutic insights.
 
+> A note on the name: The "Graph" in "OpenTargetGraph" is a bit of a misnomer. No graph database or knowledge graph is used in this project.
+
 ## 🚀 Overview
 
 This platform answers the question: *Which drug targets are structurally similar to known kinase inhibitors, based on deep learning embeddings rather than just sequence alignment?*
