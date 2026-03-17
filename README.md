@@ -8,7 +8,7 @@
 
 **OpenTargetGraph** is a cloud-native, end-to-end bioinformatics platform designed to identify and visualize potential drug targets using state-of-the-art Protein Language Models (PLMs). 
 
-It demonstrates a modern **TechBio stack**, combining robust data engineering (Polars/Parquet), scalable orchestration (Dagster), and AI-driven structural biology (ESM-2 Embeddings) to bridge the gap between raw genomic data and actionable therapeutic insights.
+It demonstrates a modern **TechBio stack**, combining robust data engineering (Polars/Parquet), scalable orchestration (Dagster), and AI-driven structural biology (ESM-2 Embeddings) to bridge the gap between raw biological data and therapeutic insights.
 
 > A note on the name: The "Graph" in "OpenTargetGraph" is a bit of a misnomer. No graph database or knowledge graph is used in this project.
 
@@ -20,7 +20,7 @@ This platform answers the question: *Which drug targets are structurally similar
 
 1.  **Data Ingestion**: Automates the retrieval of high-value drug targets (e.g., Kinases) from **UniProt** and bioactive small molecules from **ChEMBL**.
 2.  **AI Analysis**: Generates high-dimensional vector embeddings for protein sequences using Meta AI's **ESM-2 (Evolutionary Scale Modeling)** transformer.
-3.  **Vector Search & Relational Storage**: Links targets to drugs in a PostgreSQL database and stores vector embeddings using pgvector, enabling complex semantic queries about bioactivity and mechanism of action.
+3.  **Vector Search & Relational Storage**: Stores target metadata and drug activity in a PostgreSQL database, and stores ESM-2 embeddings using pgvector. This enables semantic similarity searches to group related protein targets and infer target-drug associations based on structural proximity.
 4.  **Visualization**: A **Streamlit** dashboard that offers:
     *   3D Protein Structure rendering (via Py3Dmol).
     *   An "Embedding Space" t-SNE projection to find novel clusters of similar targets.
