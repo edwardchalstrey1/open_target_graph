@@ -36,7 +36,6 @@ This platform answers the question: *Which drug targets are structurally similar
 │   │   ├── researcher.py   # The Pydantic output schema and LLM system prompt
 │   │   └── workflow.py     # The LangGraph state machine
 │   └── dashboard/          # Streamlit frontend application
-├── infra/                  # Pulumi IaC definitions
 ├── data/                   # Local storage for Parquet files (gitignored)
 ├── docker-compose.yml      # Docker Compose file for local development
 ├── Dockerfile.dagster      # Dockerfile for Dagster
@@ -45,8 +44,6 @@ This platform answers the question: *Which drug targets are structurally similar
 ```
 
 ## 🏗️ Architecture
-
-The system follows a microservice-inspired architecture, orchestrated by Dagster. While a Pulumi-based IaC deployment to **Kubernetes** is planned, the current implementation is focused on local execution and Docker Compose.
 
 ```mermaid
 graph TD
