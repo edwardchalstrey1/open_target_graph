@@ -10,7 +10,7 @@
 
 It demonstrates a modern **TechBio stack**, combining robust data engineering (Polars/Parquet), scalable orchestration (Dagster), and AI-driven structural biology (ESM-2 Embeddings) to bridge the gap between raw genomic data and actionable therapeutic insights.
 
-## 🚀 High-Level Overview
+## 🚀 Overview
 
 This platform answers the question: *Which drug targets are structurally similar to known kinase inhibitors, based on deep learning embeddings rather than just sequence alignment?*
 - Investigated targets: Known kinase inhibitors from UniProt.
