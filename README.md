@@ -41,6 +41,7 @@ The application includes the following components:
 │   │   ├── researcher.py   # The Pydantic output schema and LLM system prompt
 │   │   └── workflow.py     # The LangGraph state machine
 │   └── dashboard/          # Streamlit frontend application
+├── infra/                  # Pulumi Infrastructure as Code (Kubernetes)
 ├── data/                   # Local storage for Parquet files (gitignored)
 ├── docker-compose.yml      # Docker Compose file for local development
 ├── Dockerfile.dagster      # Dockerfile for Dagster
