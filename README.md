@@ -6,7 +6,7 @@
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%2B%20pgvector-blue)](https://postgresql.org/)
 [![Docker](https://img.shields.io/badge/Infra-Docker%20Compose-blueviolet)](https://www.docker.com/)
 
-**OpenTargetGraph** is a cloud-native, end-to-end bioinformatics platform designed to identify and visualize potential drug targets using state-of-the-art Protein Language Models (PLMs). 
+**OpenTargetGraph** is an end-to-end bioinformatics platform designed to identify and visualise potential drug targets using state-of-the-art Protein Language Models (PLMs). 
 
 It demonstrates a modern **TechBio stack**, combining robust data engineering (Polars/Parquet), scalable orchestration (Dagster), and AI-driven structural biology (ESM-2 Embeddings) to bridge the gap between raw biological data and therapeutic insights.
 
