@@ -18,7 +18,7 @@ It demonstrates a modern **TechBio stack**, combining robust data engineering (P
 - [Project Structure](#-project-structure)
 - [Architecture](#️-architecture)
 - [Developer Documentation](#developer-documentation)
-
+- [Application Screenshots](#-application-screenshots)
 
 ## 🚀 Overview
 
@@ -224,3 +224,9 @@ To run the tests in the Docker container:
 ```bash
 docker compose exec dagster uv run pytest
 ```
+
+# 📸 Application screenshots
+
+![1](screenshots/1.png)
+![2](screenshots/2.png)
+![3](screenshots/3.png)
