@@ -49,23 +49,23 @@ This platform answers the question: *Which drug targets are structurally similar
 
 ```mermaid
 graph TD
-    subgraph "Data Layer (Dagster + Polars)"
-        A[UniProt API] -->|Fetch| B(Raw Parquet)
-        C[ChEMBL API] -->|Fetch| B
-        B -->|Clean & Join| D(Silver Tables)
+    subgraph "Data Ingestion (Dagster + Polars)"
+        A[UniProt API] -->|Fetch Kinases| B(Raw Kinase Data)
+        C[ChEMBL API] -->|Fetch Molecules| B
+        B -->|Clean & Join| D(Processed Data 'Silver' Tables)
     end
 
-    subgraph "ML Layer (PyTorch)"
-        D -->|Sequence| E[ESM-2 Transformer]
-        E -->|Inference| F(Vector Embeddings)
+    subgraph "AI Modeling (Hugging Face + PyTorch)"
+        D -->|Protein Sequence| E[ESM-2 Transformer Model]
+        E -->|Generate Vector| F(Vector Embeddings)
     end
 
-    subgraph "Storage & Serving"
-        D --> G[(PostgreSQL)]
-        F --> G
-        G -.->|pgvector| H[Streamlit App]
-        H --> I[PubMed API]
-        H --> J[Gemini AI]
+    subgraph "Storage & Application Serving"
+        D -->|Load Metadata| G[(PostgreSQL DB)]
+        F -->|Load Vectors| G
+        G -.->|pgvector query| H[Streamlit UI Dashboard]
+        H -->|Literature Search| I[PubMed API]
+        H -->|Report Generation| J[Gemini LLM Agent]
     end
 ```
 
@@ -113,6 +113,8 @@ The dashboard uses the Gemini API for the research assistant. To use this featur
 Clone the repository and create a virtual environment using `uv`.
 
 ```bash
+git clone https://github.com/edwardchalstrey/open_target_graph.git
+cd open_target_graph
 uv venv
 uv pip install -e ".[dev]"
 ```
@@ -144,7 +146,15 @@ Alternatively, you can simply click **Materialize all** to use the default of 10
 
 *Note: For the local setup, the `load_to_postgres` asset requires a PostgreSQL database to be running locally.*
 
-### 3. Run the Dashboard (Streamlit)
+### 3. Setup PostgreSQL Locally
+
+The platform requires a PostgreSQL database with the `pgvector` extension to store and query the generated embeddings.
+
+TODO: Add instructions for setting up PostgreSQL locally (this has only been tested in Docker).
+
+Ensure this database is running before executing the data pipeline or launching the dashboard.
+
+### 4. Run the Dashboard (Streamlit)
 
 Once the data assets from the pipeline have been materialized and loaded into the PostgreSQL database, you can launch the interactive Streamlit dashboard.
 
@@ -168,8 +178,13 @@ uv run pytest
 
 To run the entire application stack including Dagster, PostgreSQL (with `pgvector`), and the Streamlit dashboard all at once:
 
-1. Ensure Docker is installed and running.
-2. Run the following command from the project root. By default, this will pull pre-built images from Docker Hub. To build locally, use the `--build` flag:
+1. Ensure [Docker](https://www.docker.com/) is installed and running.
+2. Clone the repository:
+    ```bash
+    git clone https://github.com/edwardchalstrey/open_target_graph.git
+    cd open_target_graph
+    ```
+3. Run the following command from the project root. By default, this will pull pre-built images from Docker Hub. To build locally, use the `--build` flag:
    ```bash
    docker compose up -d
    ```
