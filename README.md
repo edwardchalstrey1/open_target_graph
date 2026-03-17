@@ -14,7 +14,7 @@ It demonstrates a modern **TechBio stack**, combining robust data engineering (P
 
 ## 🚀 Overview
 
-This platform provides suggestions for drugs that could inhibit kinase protein targets, based on the  structural similarity of those targets to with other kinases the drugs are known to inhibit. A literature search can be conducted to provide additional evidence for the potential of the suggested drugs.
+This platform provides suggestions for drugs that could inhibit kinase protein targets, based on the  structural similarity of those targets with other kinases the drugs are known to inhibit. A literature search can be conducted to provide additional evidence for the potential of the suggested drugs.
 
 The application includes the following components:
 1.  **Data Ingestion**: Automates the retrieval of high-value drug targets (e.g., Kinases) from **UniProt** and bioactive small molecules from **ChEMBL**.
