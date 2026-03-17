@@ -53,3 +53,5 @@ models/
 .vscode/
 .idea/
 .ipynb_checkpoints/
+
+issues/*

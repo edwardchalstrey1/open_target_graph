@@ -12,6 +12,14 @@ It demonstrates a modern **TechBio stack**, combining robust data engineering (P
 
 > A note on the name: The "Graph" in "OpenTargetGraph" is a bit of a misnomer. No graph database or knowledge graph is used in this project.
 
+## 📚 Table of Contents
+
+- [Overview](#-overview)
+- [Project Structure](#-project-structure)
+- [Architecture](#️-architecture)
+- [Developer Documentation](#developer-documentation)
+- [Application Screenshots](#-application-screenshots)
+
 ## 🚀 Overview
 
 This platform provides suggestions for drugs that could inhibit kinase protein targets, based on the  structural similarity of those targets with other kinases the drugs are known to inhibit. A literature search can be conducted to provide additional evidence for the potential of the suggested drugs.
@@ -216,3 +224,9 @@ To run the tests in the Docker container:
 ```bash
 docker compose exec dagster uv run pytest
 ```
+
+# 📸 Application screenshots
+
+![1](screenshots/1.png)
+![2](screenshots/2.png)
+![3](screenshots/3.png)
