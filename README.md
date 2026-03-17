@@ -14,18 +14,17 @@ It demonstrates a modern **TechBio stack**, combining robust data engineering (P
 
 ## 🚀 Overview
 
-This platform answers the question: *Which drug targets are structurally similar to known kinase inhibitors, based on deep learning embeddings rather than just sequence alignment?*
-- Investigated targets: Known kinase inhibitors from UniProt.
-- Investigated drugs: Bioactive molecules from ChEMBL.
+This platform provides suggestions for drugs that could inhibit kinase protein targets, based on the  structural similarity of those targets to with other kinases the drugs are known to inhibit. A literature search can be conducted to provide additional evidence for the potential of the suggested drugs.
 
+The application includes the following components:
 1.  **Data Ingestion**: Automates the retrieval of high-value drug targets (e.g., Kinases) from **UniProt** and bioactive small molecules from **ChEMBL**.
 2.  **AI Analysis**: Generates high-dimensional vector embeddings for protein sequences using Meta AI's **ESM-2 (Evolutionary Scale Modeling)** transformer.
 3.  **Vector Search & Relational Storage**: Stores target metadata and drug activity in a PostgreSQL database, and stores ESM-2 embeddings using pgvector. This enables semantic similarity searches to group related protein targets and infer target-drug associations based on structural proximity.
-4.  **Visualization**: A **Streamlit** dashboard that offers:
+4.  **Visualisation**: A **Streamlit** dashboard that offers:
     *   3D Protein Structure rendering (via Py3Dmol).
-    *   An "Embedding Space" t-SNE projection to find novel clusters of similar targets.
-    *   **Autonomous Research Assistant**: Deep-dive literature analysis via PubMed and LLM-driven research reports.
+    *   An "Embedding Space" t-SNE projection to visualise clusters of similar targets.
     *   **Semantic search for drug candidates** based on protein similarity.
+    *   **Autonomous Research Assistant**: Deep-dive literature analysis via PubMed and LLM-driven research reports.
 
 📦 Project Structure
 --------------------
