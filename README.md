@@ -5,6 +5,8 @@
 [![PyTorch](https://img.shields.io/badge/ML-PyTorch%20%2F%20ESM--2-red)](https://pytorch.org/)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%2B%20pgvector-blue)](https://postgresql.org/)
 [![Docker](https://img.shields.io/badge/Infra-Docker%20Compose-blueviolet)](https://www.docker.com/)
+[![Kubernetes](https://img.shields.io/badge/Infra-Kubernetes-blueviolet)](https://kubernetes.io/)
+[![Pulumi](https://img.shields.io/badge/Infra-Pulumi-yellow)](https://www.pulumi.com/)
 
 **OpenTargetGraph** is an end-to-end bioinformatics platform designed to identify and visualise potential drug targets using state-of-the-art Protein Language Models (PLMs). 
 
@@ -264,15 +266,3 @@ kubectl port-forward svc/dagster 3000:3000
 # Streamlit Dashboard
 kubectl port-forward svc/streamlit 8501:8501
 ```
-
-<details>
-
-<summary> TODO: Cloud Considerations</summary>
-
-To run this in the cloud (GKE, EKS, etc.):
-1.  **Registry Credentials**: You'll need to create a `kubernetes.io/dockerconfigjson` secret so the cluster can pull from your private Docker Hub repo.
-2.  **Load Balancer**: Change the `Service` type from `ClusterIP` (default) to `LoadBalancer` in `infra/__main__.py` to get a public IP.
-3.  **Persistent Storage**: For the Postgres database, you'll need to define a `PersistentVolumeClaim` (PVC) backed by cloud storage (like EBS or GCE PD).
-4.  **Managed Postgres**: In a real production environment, it is highly recommended to use a managed service like AWS RDS or Google Cloud SQL instead of running Postgres inside Kubernetes.
-
-</details>
