@@ -14,9 +14,9 @@ It demonstrates a modern **TechBio stack**, combining robust data engineering (P
 
 ## 📚 Table of Contents
 
-- [Overview](#overview)
-- [Project Structure](#project-structure)
-- [Architecture](#architecture)
+- [Overview](#-overview)
+- [Project Structure](#-project-structure)
+- [Architecture](#️-architecture)
 - [Developer Documentation](#developer-documentation)
 
 
