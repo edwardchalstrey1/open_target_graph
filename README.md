@@ -3,7 +3,8 @@
 [![Dagster](https://img.shields.io/badge/Orchestration-Dagster-green)](https://dagster.io/)
 [![Polars](https://img.shields.io/badge/Data-Polars-blue)](https://pola.rs/)
 [![PyTorch](https://img.shields.io/badge/ML-PyTorch%20%2F%20ESM--2-red)](https://pytorch.org/)
-[![Kubernetes](https://img.shields.io/badge/Infra-Kubernetes-blueviolet)](https://kubernetes.io/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%2B%20pgvector-blue)](https://postgresql.org/)
+[![Docker](https://img.shields.io/badge/Infra-Docker%20Compose-blueviolet)](https://www.docker.com/)
 
 **OpenTargetGraph** is a cloud-native, end-to-end bioinformatics platform designed to identify and visualize potential drug targets using state-of-the-art Protein Language Models (PLMs). 
 
@@ -17,7 +18,7 @@ This platform answers the question: *Which drug targets are structurally similar
 
 1.  **Data Ingestion**: Automates the retrieval of high-value drug targets (e.g., Kinases) from **UniProt** and bioactive small molecules from **ChEMBL**.
 2.  **AI Analysis**: Generates high-dimensional vector embeddings for protein sequences using Meta AI's **ESM-2 (Evolutionary Scale Modeling)** transformer.
-3.  **Knowledge Graph**: Links targets to drugs in a relational schema, enabling complex queries about bioactivity and mechanism of action.
+3.  **Vector Search & Relational Storage**: Links targets to drugs in a PostgreSQL database and stores vector embeddings using pgvector, enabling complex semantic queries about bioactivity and mechanism of action.
 4.  **Visualization**: A **Streamlit** dashboard that offers:
     *   3D Protein Structure rendering (via Py3Dmol).
     *   An "Embedding Space" t-SNE projection to find novel clusters of similar targets.
@@ -30,8 +31,9 @@ This platform answers the question: *Which drug targets are structurally similar
 ```
 ├── open_target_graph/
 │   ├── assets/             # Dagster Software-Defined Assets
+│   │   ├── db/             # Loads data into PostgreSQL using pgvector
 │   │   ├── ingestion/      # ETL logic for UniProt/ChEMBL
-│   │   └── modeling/       # PyTorch inference logic
+│   │   └── modeling/       # Hugging Face Transformers & PyTorch inference logic for ESM-2 embeddings
 │   ├── agents/             # Agentic logic
 │   │   ├── researcher.py   # The Pydantic output schema and LLM system prompt
 │   │   └── workflow.py     # The LangGraph state machine
@@ -138,11 +140,13 @@ Navigate to the Dagster UI in your browser and click on **Lineages**. To configu
 4. Click **Materialize selected** to materialize the first asset.
 5. Click off the `raw_uniprot_kinases` asset and click the dropdown arrow again and choose **Materialize unsynced** to materialize the remaining assets.
 
-Alternatively, you can simply click **Materialize all** to use the default of 100. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and save the results into the `data/` directory.
+Alternatively, you can simply click **Materialize all** to use the default of 100. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and load the results into the PostgreSQL database.
+
+*Note: For the local setup, the `load_to_postgres` asset requires a PostgreSQL database to be running locally.*
 
 ### 3. Run the Dashboard (Streamlit)
 
-Once the data assets from the pipeline exist in the `data/` folder, you can launch the interactive Streamlit dashboard.
+Once the data assets from the pipeline have been materialized and loaded into the PostgreSQL database, you can launch the interactive Streamlit dashboard.
 
 ```bash
 uv run streamlit run open_target_graph/dashboard/app.py
@@ -179,7 +183,7 @@ Navigate to the Dagster UI in your browser and click on **Lineages**. To configu
 4. Click **Materialize selected** to materialize the first asset.
 5. Click off the `raw_uniprot_kinases` asset and click the dropdown arrow again and choose **Materialize unsynced** to materialize the remaining assets.
 
-Alternatively, you can simply click **Materialize all** to use the default of 100. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and save the results into the `data/` directory.
+Alternatively, you can simply click **Materialize all** to use the default of 100. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and load the results into the PostgreSQL database.
 
 Wait for the data ingestion to finish, then open the Streamlit GUI at http://localhost:8501.
 
