@@ -3,26 +3,28 @@
 [![Dagster](https://img.shields.io/badge/Orchestration-Dagster-green)](https://dagster.io/)
 [![Polars](https://img.shields.io/badge/Data-Polars-blue)](https://pola.rs/)
 [![PyTorch](https://img.shields.io/badge/ML-PyTorch%20%2F%20ESM--2-red)](https://pytorch.org/)
-[![Kubernetes](https://img.shields.io/badge/Infra-Kubernetes-blueviolet)](https://kubernetes.io/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%2B%20pgvector-blue)](https://postgresql.org/)
+[![Docker](https://img.shields.io/badge/Infra-Docker%20Compose-blueviolet)](https://www.docker.com/)
 
-**OpenTargetGraph** is a cloud-native, end-to-end bioinformatics platform designed to identify and visualize potential drug targets using state-of-the-art Protein Language Models (PLMs). 
+**OpenTargetGraph** is an end-to-end bioinformatics platform designed to identify and visualise potential drug targets using state-of-the-art Protein Language Models (PLMs). 
 
-It demonstrates a modern **TechBio stack**, combining robust data engineering (Polars/Parquet), scalable orchestration (Dagster), and AI-driven structural biology (ESM-2 Embeddings) to bridge the gap between raw genomic data and actionable therapeutic insights.
+It demonstrates a modern **TechBio stack**, combining robust data engineering (Polars/Parquet), scalable orchestration (Dagster), and AI-driven structural biology (ESM-2 Embeddings) to bridge the gap between raw biological data and therapeutic insights.
 
-## 🚀 High-Level Overview
+> A note on the name: The "Graph" in "OpenTargetGraph" is a bit of a misnomer. No graph database or knowledge graph is used in this project.
 
-This platform answers the question: *Which drug targets are structurally similar to known kinase inhibitors, based on deep learning embeddings rather than just sequence alignment?*
-- Investigated targets: Known kinase inhibitors from UniProt.
-- Investigated drugs: Bioactive molecules from ChEMBL.
+## 🚀 Overview
 
+This platform provides suggestions for drugs that could inhibit kinase protein targets, based on the  structural similarity of those targets to with other kinases the drugs are known to inhibit. A literature search can be conducted to provide additional evidence for the potential of the suggested drugs.
+
+The application includes the following components:
 1.  **Data Ingestion**: Automates the retrieval of high-value drug targets (e.g., Kinases) from **UniProt** and bioactive small molecules from **ChEMBL**.
 2.  **AI Analysis**: Generates high-dimensional vector embeddings for protein sequences using Meta AI's **ESM-2 (Evolutionary Scale Modeling)** transformer.
-3.  **Knowledge Graph**: Links targets to drugs in a relational schema, enabling complex queries about bioactivity and mechanism of action.
-4.  **Visualization**: A **Streamlit** dashboard that offers:
+3.  **Vector Search & Relational Storage**: Stores target metadata and drug activity in a PostgreSQL database, and stores ESM-2 embeddings using pgvector. This enables semantic similarity searches to group related protein targets and infer target-drug associations based on structural proximity.
+4.  **Visualisation**: A **Streamlit** dashboard that offers:
     *   3D Protein Structure rendering (via Py3Dmol).
-    *   An "Embedding Space" t-SNE projection to find novel clusters of similar targets.
-    *   **Autonomous Research Assistant**: Deep-dive literature analysis via PubMed and LLM-driven research reports.
+    *   An "Embedding Space" t-SNE projection to visualise clusters of similar targets.
     *   **Semantic search for drug candidates** based on protein similarity.
+    *   **Autonomous Research Assistant**: Deep-dive literature analysis via PubMed and LLM-driven research reports.
 
 📦 Project Structure
 --------------------
@@ -30,13 +32,13 @@ This platform answers the question: *Which drug targets are structurally similar
 ```
 ├── open_target_graph/
 │   ├── assets/             # Dagster Software-Defined Assets
+│   │   ├── db/             # Loads data into PostgreSQL using pgvector
 │   │   ├── ingestion/      # ETL logic for UniProt/ChEMBL
-│   │   └── modeling/       # PyTorch inference logic
+│   │   └── modeling/       # Hugging Face Transformers & PyTorch inference logic for ESM-2 embeddings
 │   ├── agents/             # Agentic logic
 │   │   ├── researcher.py   # The Pydantic output schema and LLM system prompt
 │   │   └── workflow.py     # The LangGraph state machine
 │   └── dashboard/          # Streamlit frontend application
-├── infra/                  # Pulumi IaC definitions
 ├── data/                   # Local storage for Parquet files (gitignored)
 ├── docker-compose.yml      # Docker Compose file for local development
 ├── Dockerfile.dagster      # Dockerfile for Dagster
@@ -46,27 +48,25 @@ This platform answers the question: *Which drug targets are structurally similar
 
 ## 🏗️ Architecture
 
-The system follows a microservice-inspired architecture, orchestrated by Dagster. While a Pulumi-based IaC deployment to **Kubernetes** is planned, the current implementation is focused on local execution and Docker Compose.
-
 ```mermaid
 graph TD
-    subgraph "Data Layer (Dagster + Polars)"
-        A[UniProt API] -->|Fetch| B(Raw Parquet)
-        C[ChEMBL API] -->|Fetch| B
-        B -->|Clean & Join| D(Silver Tables)
+    subgraph "Data Ingestion (Dagster + Polars)"
+        A[UniProt API] -->|Fetch Kinases| B(Raw Kinase Data)
+        C[ChEMBL API] -->|Fetch Molecules| B
+        B -->|Clean & Join| D(Processed Data 'Silver' Tables)
     end
 
-    subgraph "ML Layer (PyTorch)"
-        D -->|Sequence| E[ESM-2 Transformer]
-        E -->|Inference| F(Vector Embeddings)
+    subgraph "AI Modeling (Hugging Face + PyTorch)"
+        D -->|Protein Sequence| E[ESM-2 Transformer Model]
+        E -->|Generate Vector| F(Vector Embeddings)
     end
 
-    subgraph "Storage & Serving"
-        D --> G[(PostgreSQL)]
-        F --> G
-        G -.->|pgvector| H[Streamlit App]
-        H --> I[PubMed API]
-        H --> J[Gemini AI]
+    subgraph "Storage & Application Serving"
+        D -->|Load Metadata| G[(PostgreSQL DB)]
+        F -->|Load Vectors| G
+        G -.->|pgvector query| H[Streamlit UI Dashboard]
+        H -->|Literature Search| I[PubMed API]
+        H -->|Report Generation| J[Gemini LLM Agent]
     end
 ```
 
@@ -114,6 +114,8 @@ The dashboard uses the Gemini API for the research assistant. To use this featur
 Clone the repository and create a virtual environment using `uv`.
 
 ```bash
+git clone https://github.com/edwardchalstrey/open_target_graph.git
+cd open_target_graph
 uv venv
 uv pip install -e ".[dev]"
 ```
@@ -141,11 +143,21 @@ Navigate to the Dagster UI in your browser and click on **Lineages**. To configu
 4. Click **Materialize selected** to materialize the first asset.
 5. Click off the `raw_uniprot_kinases` asset and click the dropdown arrow again and choose **Materialize unsynced** to materialize the remaining assets.
 
-Alternatively, you can simply click **Materialize all** to use the default of 100. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and save the results into the `data/` directory.
+Alternatively, you can simply click **Materialize all** to use the default of 100. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and load the results into the PostgreSQL database.
 
-### 3. Run the Dashboard (Streamlit)
+*Note: For the local setup, the `load_to_postgres` asset requires a PostgreSQL database to be running locally.*
 
-Once the data assets from the pipeline exist in the `data/` folder, you can launch the interactive Streamlit dashboard.
+### 3. Setup PostgreSQL Locally
+
+The platform requires a PostgreSQL database with the `pgvector` extension to store and query the generated embeddings.
+
+TODO: Add instructions for setting up PostgreSQL locally (this has only been tested in Docker).
+
+Ensure this database is running before executing the data pipeline or launching the dashboard.
+
+### 4. Run the Dashboard (Streamlit)
+
+Once the data assets from the pipeline have been materialized and loaded into the PostgreSQL database, you can launch the interactive Streamlit dashboard.
 
 ```bash
 uv run streamlit run open_target_graph/dashboard/app.py
@@ -167,10 +179,15 @@ uv run pytest
 
 To run the entire application stack including Dagster, PostgreSQL (with `pgvector`), and the Streamlit dashboard all at once:
 
-1. Ensure Docker is installed and running.
-2. Run the following command from the project root:
+1. Ensure [Docker](https://www.docker.com/) is installed and running.
+2. Clone the repository:
+    ```bash
+    git clone https://github.com/edwardchalstrey/open_target_graph.git
+    cd open_target_graph
+    ```
+3. Run the following command from the project root. By default, this will pull pre-built images from Docker Hub. To build locally, use the `--build` flag:
    ```bash
-   docker compose up --build -d
+   docker compose up -d
    ```
 
 ### Materialize the data assets in Dagster
@@ -182,7 +199,7 @@ Navigate to the Dagster UI in your browser and click on **Lineages**. To configu
 4. Click **Materialize selected** to materialize the first asset.
 5. Click off the `raw_uniprot_kinases` asset and click the dropdown arrow again and choose **Materialize unsynced** to materialize the remaining assets.
 
-Alternatively, you can simply click **Materialize all** to use the default of 100. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and save the results into the `data/` directory.
+Alternatively, you can simply click **Materialize all** to use the default of 100. This will execute the pipeline, download the data from UniProt and ChEMBL, generate embeddings, and load the results into the PostgreSQL database.
 
 Wait for the data ingestion to finish, then open the Streamlit GUI at http://localhost:8501.
 
